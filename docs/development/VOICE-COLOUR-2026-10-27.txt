@@ -1,0 +1,68 @@
+MUTABLE DREAMS 1.2 — VOICE COLOUR AND RESPONSIVE LANDSCAPES
+Private development, 27 October 2026. Published 1.0 and 1.1 unchanged.
+
+SOUND CHARACTER
+All fifteen voice paths have been reviewed and adjusted. Kick: gentler pitch
+transient; Snare: softer body/noise balance; Hat: remove the fixed resonant
+bandpass peak and use its two-stage envelope. FM: stronger midrange articulation
+following touch and envelope. VA: wider pulses in the lower Tone range.
+Harmonic: less emphasis on high partials. Rings: damped, filtered mallet.
+Elements: softer excitation and brightness. Choir: a gentle second harmonic.
+Bass: Shape now changes its octave body; Harmonics retains the sub blend.
+Mellow: more defined rounded harmonics. Satin and Spectral: distinct interpolated
+waveform colours and slow motion. Velvet Keys: a soft transient settling into
+the body. Breath: a reed with odd harmonics and low-pass noise.
+
+Original Choir, Bass, Mellow, Velvet Keys and Breath have 25 ms control smoothing
+for continuous Tone/Shape changes. Discrete chord types and FM ratios retain
+their intended selection behavior. Finite extra partials fade out before
+Nyquist during high notes and bends instead of being cut abruptly.
+No new saturation on the master, no blanket EQ, no new oversampling buffer.
+All tracks remain freely assignable. Model count is still 15, not 15 new models.
+
+LIBRARY
+Relative to the immediately preceding organic-refinement checkpoint:
+224 of 288 tone recipes and 60 of 93 Biome records were adjusted. IDs and names
+are unchanged. There are 92 musical Biomes plus Blank. This is a curation pass,
+not an increase in library size. Earlier 1.2 already added 64 tones and 16 Biomes.
+Reload a factory Biome with PRESET to get the revised recipe. Saved custom
+parameters are preserved; their sound can change with the revised engine.
+
+RINGS PERFORMANCE FIX
+Six moving Rings voices with dense rhythm, grains, delay/room and animated edits
+hit the overload guard in the first hardware pass. The old optimized path only
+handled a stationary pickup. A changing pickup used the slower per-sample loop.
+The new ramped block path retains every mode, gain ramp, sample rate and summation
+order. 4096 reference/optimized blocks, with 1/7/31/64/97 samples and 8..64 modes,
+are byte-identical on the native compiler. The device re-test is recorded in
+device-tests.json; do not confuse it with first-pass/device-tests.json.
+
+GRAPHICS
+Brighter Nunito/Barlow text, offline 4x rasterization for every role, 4-bit glyph
+coverage, unchanged font metrics. The physical screen remains 240 x 240 pixels.
+Luminous rims and accents sit behind legible controls; no blur/framebuffer added.
+The living field now follows the current page's parameters. Examples:
+LIVE: Density changes population, Space/Density growth, Colour light, Motion flow.
+GRAIN: return changes population, size grows forms, feedback lights the rim.
+CLOUD: noise and return change population; freeze reduces the field's motion.
+RHYTHM/SEQUENCE: occupied hits/steps change density; length/probability shape size.
+FILTER: cutoff changes growth; resonance changes light; Breathe changes motion.
+SPACE: return changes population, room tail growth, feedback light.
+MODULATION: Marbles/Tides/Warps drive density, depth and light.
+Utility pages intentionally stay sparse. Values approach their target gently.
+These are illustrations of settings, not a waveform or a CPU/audio meter.
+Grain-page markers also follow mix, size, position and reverse. No extra timer.
+Native curves remain cached; circle drawing rejects pixels outside the active
+40-row tile. Motion Off remains pixel-static. Held-key help remains legible.
+The browser editor receives matching page-coloured, parameter-responsive light.
+
+COMPARISONS AND SCOPE
+Voice-Lab contains 15 dry isolated engine pairs (identical patches/notes/velocities)
+and four complete Biome pairs (engine AND recipes may change), from exact firmware
+DSP offline. 44.1 kHz, 24-bit stereo WAV; per-pair RMS matching, not LUFS; no external
+mastering. Manual playback only. Numeric tests are not a subjective listening
+verdict. Low settings may sound deliberately subtle; not every patch is transformed.
+
+Patch v7, MIDI protocol, User Bank layouts and the full granular tape are unchanged.
+The original snapshot, failure logs, reference tests, backup and installation
+receipts are retained alongside this document. This checkpoint is not a release.

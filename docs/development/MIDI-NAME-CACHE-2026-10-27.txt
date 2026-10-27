@@ -1,0 +1,36 @@
+MUTABLE DREAMS — MACOS MIDI NAME CACHE, 27 OCTOBER 2026
+
+Observed symptom
+USB audio and the USB descriptor correctly identified Mutable Dreams FM-1, but
+CoreMIDI exposed only X0X FM-1. A prior firmware had left a cached MIDI device
+and entity name. Reconnecting USB did not refresh this cached name.
+
+Verified mapping
+The actual USB product was Mutable Dreams FM-1, manufacturer Mutable Dreams
+Project, VID 0x1209 / PID 0x0001, USB location 34603008. The online CoreMIDI
+device with the stale label had the same USB location and vendor/product pair.
+The device answered the firmware identity query with FM-1_710010200. The owner
+also confirmed that X0X was no longer installed on either device.
+
+Repair
+Only that mapped CoreMIDI device's name, model and manufacturer, and its entity
+name, were corrected. No endpoints were deleted, no global MIDI configuration
+was reset, and no firmware write was involved in this name repair. Input and
+output both then reported Mutable Dreams FM-1. The corrected names survived the
+subsequent authorized private 1.2 firmware installation and restart.
+
+Safety for future tools
+A cached display name is not sufficient proof of device identity. Match the
+current USB product/location, then verify the firmware's identity before any
+write. Do not assume an X0X-labelled endpoint always belongs to Mutable Dreams.
+Retain exact, unique input/output selection and reject ambiguous devices. A
+simultaneous update-loader endpoint is also a reason to stop and disambiguate.
+The Syntherella instrument was not accessed or changed in this repair.
+
+Evidence
+work/development-1.2/balance-refinement-2026-10-27/midi-name-repair.json
+work/development-1.2/balance-refinement-2026-10-27/midi-topology.json
+work/development-1.2/balance-refinement-2026-10-27/installation.json
+
+This is an observed local macOS cache repair, not a USB descriptor change in
+Mutable Dreams, and not a claim about every operating system or MIDI driver.

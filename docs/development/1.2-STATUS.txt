@@ -1,0 +1,61 @@
+MUTABLE DREAMS 1.2 — PRIVATE FINAL CHECKS, 27 OCTOBER 2026
+Installed identity: FM-1_710010200
+Installed SHA-256: 828891e0f506d6a07ee0c6fa844e54207985c464e0f2d9cbb423e73ae522f7fb
+This is a private candidate. Published 1.0 and 1.1 remain unchanged.
+
+RESULTS ON THE ACTUAL FM-1
+29 controlled audio cases; 31 additional assertions; 731.7 measured playback seconds.
+No new xruns, overloads, nonfinite audio, dropped commands or USB capture errors.
+Highest audio callback: 88.39% of its deadline.
+Case: Six Harmonic plus grains and full effects with animated editing.
+All fifteen engines, six-track combinations, shared effects, animated editing,
+short staggered gates, 32-step phrases, warm Biomes and grain sizes crossing 20
+were exercised. Every held function-button guide opened; release did not execute
+its short action. Dense patches may intentionally use ECO. These scoped tests
+do not certify every combination, unlimited polyphony or multiweek uptime.
+
+SEQUENCER, BANKS AND RECOVERY
+15 sequencing/storage checks passed: keyboard and USB step entry, velocity,
+live overdub duration, stop/disarm, four deterministic generators, track isolation,
+live JSON-format snapshot roundtrip and exact User Biome save/load/name recall.
+The original slot was restored immediately; all 22 saved objects and the owner's
+live patch match the backup byte-for-byte.
+Exact 1.2 -> verified Stock V15 -> exact 1.2 passed. The complete bank restore
+was physically confirmed with SEL and checked against the pre-update backup.
+The first strict test harness stopped at the stock loader's different USB name
+before writing; its ota-FM-1_015 identity was verified and the harness corrected.
+Only the identified Mutable Dreams device and its own loader ports were opened.
+Syntherella was not opened or changed.
+Physical cold start: PASSED; saved data, name, preferences and stopped startup verified.
+
+BROWSER AND OFFLINE
+Owner confirmed warm sound, visible controls, own sequence editing, browser-slot
+save and reload on the exact packaged browser instrument. Browser and hardware
+banks are separate. Current host/WASM, 23 pages, held guides, transfer/storage,
+legacy imports, editor serialization and Density synchronization checks passed.
+The prior full DSP/extreme-patch suite remains applicable: DSP source unchanged.
+New unsigned elapsed-time tests cover clock rollover for uploads, overwrite
+confirmation, help-related UI messages, intro, pulses and frame cadence.
+This is simulated boundary coverage, not an actual 49.7-day endurance run.
+The browser installer now rejects multiple FM-1 candidates before opening ports.
+Visible installer check: owner confirmed successful same-build reinstall; cold-start verification checks retained data.
+No blanket compatibility claim is made for every third-party firmware.
+
+RESOURCES
+Flash image 453732 / 581564 bytes; 127832 free.
+Static RAM 73000 / 98304; 25304 free.
+Audio pool 334872 / 344064; 9192 free.
+The display remains physically 240 x 240. Clearer antialiased lettering and
+parameter-responsive animation improve presentation without extra screen pixels.
+
+VIDEO
+136-second, 1080p private review film, calm male English narration, six chapters.
+Firmware views recaptured from the current native application; sound rendered
+from its DSP, not claimed as a device recording. No stock-firmware product photo.
+Measured mix: -17.8 LUFS integrated, -2.9 dBTP. Subtitles and transcript included.
+Quiet Arrival is the introduction; Terrassentanz belongs to Syntherella.
+
+REMAINING LIMITS / RELEASE TASKS
+- Final owner listening review of the warm Biomes and isolated loud-note concern.
+- Physical TRS-MIDI cable test remains unavailable; USB and simulated TRS checks do not replace it.
+- Final film listening/subtitle review and future 1.2 website/release publication; nothing public is changed by this private preparation.

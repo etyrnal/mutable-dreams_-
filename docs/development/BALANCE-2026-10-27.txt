@@ -1,0 +1,57 @@
+MUTABLE DREAMS 1.2 — PRIVATE DEVICE CHECKPOINT, 27 OCTOBER 2026
+PRIVATE 1.2 BALANCE BUILD INSTALLED — 26 DEVICE CASES PASSED; OWNER REVIEW READY
+Firmware SHA256: 0b93a61c665ca344c7a740811e58985b4927ff66c48b1c233844d81ddc5b4020
+Identity: FM-1_710010200
+
+INSTALLATION AND PERSONAL DATA
+The old macOS X0X name was a cached label on the actual Mutable Dreams USB device.
+Its USB product/location and firmware identity were verified before changing local
+CoreMIDI names. No Syntherella device was accessed. The corrected Mutable Dreams
+FM-1 endpoint survived the firmware update and restart.
+Two identical backups contain all 22 saved objects (project, preferences, sixteen
+Biome slots and sixty-four sound slots). The unsaved live patch is separate.
+The previous tested private firmware is retained for rollback. Backups exclude
+transient granular audio and calibration; no device firmware readback is claimed.
+After installation and after testing, all saved objects remain byte-identical.
+The original live patch is restored; playback is stopped and remote control released.
+
+EXACT BUILD — MEASURED ON THE FM-1
+26 device cases, 31 checks, 641.6 seconds of measured cases.
+All fifteen voice paths with six voices, shared effects and animated editing;
+six 32-step patterns; fourteen held-button guides including release behavior;
+eight warm Biomes; changing grain sizes across 20 and up to 100 with filtered air.
+Maximum callback use: 89.04% of the 5.804 ms deadline.
+Worst case: Six Harmonic plus grains and full effects with animated editing.
+No new xruns, overloads, nonfinite samples, dropped events or USB capture errors
+were observed in these cases. Requested full quality may be constrained by the
+existing workload admission guard; actual per-case quality is recorded in JSON.
+This is measured coverage, not a guarantee for every possible patch or performance.
+Normal-Biome UI rates are in VALIDATION.json. The physical screen is 240 x 240.
+Static RAM: 72984/98304 bytes.
+Audio pool: 334872/344064 bytes.
+Flash image: 453716/581564 bytes.
+
+SOUND AND INTERFACE
+Rings uses a repeatable damped mallet with a small air component, reducing random
+equal-velocity accents without compressing the mix or removing expressive velocity.
+Offline: 108 controlled strikes; worst equal-touch energy ratio 1.25849; previous
+engine fails the regression. Across 78 Rings tracks, median maximum/median event
+peak ratio falls from 1.757 to 1.204. These measurements do not certify subjective
+warmth or prove that every owner-reported loud note has the same cause.
+The sequence view adds pitch stems, velocity bars and note names. RAM use unchanged.
+Offline builds, DSP sanitizers, grain transitions, contextual help, parameter-
+responsive graphics, WASM banks and editor/Density tests passed; see VALIDATION.json.
+
+MEDIA AND PUBLIC RELEASES
+Private 2:16 update film with calm male English narration and actual firmware views.
+Quiet Arrival is the opening music. Terrassentanz/song 5 belongs to Syntherella;
+the owner corrected the earlier cross-chat request. Music is native-rendered
+current firmware DSP, not a new recording from the FM-1 hardware.
+Published 1.0 and 1.1 files, archives, website and uploads are unchanged.
+
+REMAINING BEFORE RELEASE
+- Owner listening and usability review, including even Rings accents and warm Biomes.
+- Exact-build physical cold start and final visible browser review before publication.
+- Complete and record the 1.2 Stock V15 update/return roundtrip before claiming that route for this release.
+- Physical TRS-MIDI cable test remains outstanding; USB validation does not replace it.
+- Final film/subtitle review, website/release preparation and publishing only after release approval.

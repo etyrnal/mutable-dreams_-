@@ -1,0 +1,38 @@
+PRIMARY DSP REFERENCES REVIEWED — 27 OCTOBER 2026
+
+Mutable Instruments, Plaits feature documentation:
+https://pichenettes.github.io/mutable-instruments-documentation/modules/plaits/
+Relevant approach: band-limited synthesis at the base sample rate, smoothed
+controls, and the relationship between amplitude and low-pass-gate brightness.
+
+Mutable Instruments, Plaits manual:
+https://pichenettes.github.io/mutable-instruments-documentation/modules/plaits/manual/
+Relevant approach: variable pulse/saw shapes, a gentle middle feedback region
+for FM, touch-driven dynamics and envelopes. These support curation rather
+than treating every bright metallic sound as a hardware fault.
+
+Electro-Smith / DaisySP oscillator interface:
+https://github.com/daisyaudio/DaisySP/blob/master/Source/Synthesis/oscillator.h
+Relevant approach: PolyBLEP options for band-limited classic waveforms on an
+embedded audio platform. Evaluated as a reference, not copied or added here:
+the existing Plaits VA path already provides band-limited synthesis.
+
+Nigel Redmon, EarLevel Engineering, A wavetable oscillator — Part 3:
+https://www.earlevel.com/main/2012/05/09/a-wavetable-oscillator-part-3/
+Relevant approach: pitch-dependent harmonic tables and the risk of clicks at
+abrupt table transitions. Our existing Satin/Spectral path already crossfades
+bands. This pass also fades finite additive partials continuously near Nyquist.
+
+APPLICATION TO THIS CHECKPOINT
+The sound engine's existing licensed Mutable Instruments sources were edited
+locally with their notices retained. No third-party presets, audio recordings,
+product graphics or code from other firmware binaries were transplanted.
+The new control slew and finite-partial fade are small original changes.
+The Rings loop reorganization preserves its audio and reduces state traffic;
+equivalence is tested independently against the scalar reference.
+
+Further possibilities after this build's listening review: more original
+spectral banks, constrained additive formant colours, and restrained pairwise
+voice layering using the existing six tracks. A new large physical model or
+multisample instrument must first justify both RAM and worst-case callback cost.
+Flash space alone does not prove audio processing capacity.
