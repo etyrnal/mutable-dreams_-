@@ -1,0 +1,42 @@
+MUTABLE DREAMS 1.2 — SHAPED BY LISTENING
+
+Thank you to everyone who shared music, encouragement and detailed feedback.
+
+NEW
+15 engines in total: Velvet Keys, Spectral Bloom and Breath Texture join the
+palette. 288 tones and 92 musical Biomes plus Blank — 64 more tones and 16 more
+Biomes than 1.1. All six tracks remain freely assignable.
+
+32-step note sequences per track, with rests, velocity, gate and chance.
+Four phrase generators, keyboard/MIDI step entry and monophonic live overdub.
+Four chord journeys with pace and track selection, plus Off.
+
+REFINED
+Softer contours, high-partial control and curated balances across the voices.
+A repeatable damped Rings strike reduces unintended equal-velocity accents.
+The shared granular bus gains filtered Air noise and smoother transitions;
+the shared room is more diffuse. Grain controls affect the ONE shared cloud;
+Mix/Mixer sends determine how much each of the six tracks feeds it.
+
+Parameter-responsive organic backgrounds leave more space at sparse settings.
+Clearer antialiased lettering; sequence pitch stems, note names and velocity
+bars. Hold function buttons for contextual help. Display remains 240 x 240.
+
+Timing, gate release, long-note recording, browser data validation and timer
+rollover fixes are included. FULL/ECO admission limits remain for dense patches.
+
+YOUR WORLDS
+16 User Biomes and 64 sound slots, plus JSON exports and .mddb bank backup.
+Browser storage for 1.2 is separate. Use the retained 1.1 browser to export your
+older browser patches, then import them into 1.2. Keep original files to downgrade.
+Follow Recovery-1.2.txt before installing or returning to manufacturer V15.
+
+TEST SCOPE
+Exact firmware: 828891e0f506d6a07ee0c6fa844e54207985c464e0f2d9cbb423e73ae522f7fb
+29 controlled audio/device cases, 15 sequence/storage checks, V15 roundtrip,
+bank restore, installer and cold start passed. USB MIDI tested; physical
+TRS-MIDI cable test remains outstanding. Not every arbitrary patch or third-party
+firmware update path is certified. Published 1.0 and 1.1 remain unchanged.
+
+With gratitude to Emilie Gillet, Mutable Instruments and the open-source community.
+An independent project by Kid Bunka / Christoph Link.
