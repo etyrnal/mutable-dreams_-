@@ -1,4 +1,4 @@
-# Build Mutable Dreams 1.1 from this repository
+# Build Mutable Dreams 1.2 from this repository
 
 The source is directly available in this repository. Clone it and build from the root; no source ZIP extraction or Git submodule download is needed. The application, selected Mutable Instruments code, fm1-base platform and felucca-bsp are vendored with their original notices.
 
@@ -19,7 +19,7 @@ cd mutable-dreams
 | `presets/` | Factory catalog and development patch data |
 | `tools/` | Build/package tools, backup/editor utilities and test runners |
 | `tests/` | Native DSP/application and browser protocol tests |
-| `docs/release-1.1/` | Released build qualification and update/recovery evidence |
+| `docs/release-1.2/` | Released build qualification and update/recovery evidence |
 
 ## Native build and checks (no FM-1 required)
 
@@ -44,7 +44,7 @@ Skip the `SDKROOT` line on Linux. The host executable is `app/build/san/mutable-
 
 If macOS reports `tapi error: malformed file` / `unknown architecture` while linking SDK libraries, your selected SDK and linker are incompatible. Select an installed compatible SDK through `SDKROOT`; the source-publication check used `MacOSX15.4.sdk`. Do not change firmware code to work around a host SDK mismatch.
 
-Further existing targets are `quality` (audio quality tests) and `next` (the 1.1 feature regression suite). For example:
+Further targets are `quality` (audio quality), `next` (earlier feature regressions) and `evolution` (1.2 sequence/chord/voice regressions). For example:
 
 ```sh
 python tools/build_local.py next --sanitize
@@ -91,10 +91,8 @@ For Apple Silicon, read [the tested build environment repair](docs/development/B
 
 ## Version and provenance
 
-The browsable 1.1 source is byte-identical to all **807 files** in the published `Mutable-Dreams-1.1-Source.zip`. Its original root README is preserved at [docs/release-1.1/README-from-source-archive.md](docs/release-1.1/README-from-source-archive.md), while the repository README retains the public guide and release links. `tools/verify_published_source.py` checks every archived file, including that mapping and the archive hash.
+The v1.2 release source archive contains the browsable tree and a SHA-256 manifest. Run `python3 tools/verify_published_source.py` to check these files. The device/DSP sources are identical to the qualified build; release documentation and browser packaging were updated afterwards. Toolchain differences can change binary outputs, so file identity alone is not a bit-for-bit build reproducibility claim.
 
-[SOURCE-PUBLICATION.md](SOURCE-PUBLICATION.md) records the source publication. [SOURCE-SHA256.txt](SOURCE-SHA256.txt) is the unchanged archive manifest; its `README.md` entry refers to the original archive README, not the current repository landing page.
+Original v1.0 and v1.1 tags/assets remain unchanged. Their automatic GitHub source downloads describe their historical repository commits. Use their named source ZIPs for the original frozen snapshots.
 
-The original `v1.0` and `v1.1` tags/releases remain unchanged. Their automatic GitHub source downloads describe their historical repository commits. Clone the current branch for the newly browsable tree, or use the named 1.1 source archive for the frozen release snapshot. Build-tool and SDK differences can affect outputs; byte-identical firmware reproduction is not claimed by the source-file comparison.
-
-See [qualification](docs/release-1.1/QUALIFICATION.txt), [licensing](LICENSING-GPL.txt), [platform credits](base/CREDITS.md) and the original component/font notices before distributing a fork. The device firmware and its identity/hash have not changed through this source publication.
+See [qualification](docs/release-1.2/QUALIFICATION.txt), [licensing](LICENSING-GPL.txt), platform credits and component/font notices.
