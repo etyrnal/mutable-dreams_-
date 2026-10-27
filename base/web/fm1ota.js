@@ -149,12 +149,15 @@ export class Updater {
 
   // every in/out pair with the same port name that answers the handshake
   async find(filter) {
-    const outs = [...this.access.outputs.values()];
-    for (const input of this.access.inputs.values()) {
-      if (input.state === "disconnected") continue;
-      if (!/fm-?1|felucca|ota|composite|sinco|usb-midi/i.test(input.name || "")) continue;   // never probe other gear
-      const output = outs.find((o) => o.name === input.name) || (outs.length === 1 ? outs[0] : null);
-      if (!output) continue;
+    // Refuse ambiguity before probing: installing is allowed for one connected FM-1 only.
+    const inputs = [...this.access.inputs.values()].filter(p => p.state !== "disconnected" && /fm-?1|felucca|ota|composite|sinco|usb-midi/i.test(p.name || ""));
+    const outs = [...this.access.outputs.values()].filter(p => p.state !== "disconnected");
+    if (inputs.length > 1) throw fail("ambiguous", "More than one FM-1 is connected. Disconnect the other FM-1 before installing.");
+    for (const input of inputs) {
+      const matches = outs.filter(o => o.name === input.name);
+      if (matches.length > 1) throw fail("ambiguous", "Duplicate MIDI outputs. Connect only the FM-1 you intend to update.");
+      const output = matches[0];
+      if (!output) continue; // Never pair an unrelated output as a fallback.
       try { await input.open(); await output.open(); } catch (_) { continue; }
       const link = new Link(input, output);
       const id = await handshake(link, 2);
