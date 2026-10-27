@@ -344,6 +344,22 @@ class Svf {
     state_2_ = state_2;
   }
   
+  // Mutable Dreams: sample-exact equivalent to a scalar band-pass followed
+  // by a changing pickup gain. Keep one mode's state in registers per block.
+  inline void ProcessBandPassAddRamp(const float* in, float* out, size_t size,
+                                     float gain, float increment) {
+    const float g=g_, r=r_, h=h_;
+    float s1=state_1_, s2=state_2_;
+    while(size--) {
+      const float x=*in++;
+      const float hp=(x-r*s1-g*s1-s2)*h;
+      const float bp=g*hp+s1;s1=g*hp+bp;
+      const float lp=g*bp+s2;s2=g*bp+lp;
+      gain+=increment;*out++ += gain*bp;
+    }
+    state_1_=s1;state_2_=s2;
+  }
+
   // Mutable Dreams: identical band-pass arithmetic to Process + a separate
   // additive pass, without the temporary buffer. Snare exciter leak stays
   // inside gain*(bp + input*leak), preserving the original operation order.
