@@ -161,7 +161,119 @@ for j,name in enumerate(['Satin River','Cedar Hearth','Velour Dawn','Soft Curren
   if i!=1:
    ix=208+(j*3+i)%16;tr.update({k:tones[ix][k] for k in tone_fields});tr.update(attack=250+(i%3)*180,decay=850);b['tones'][i]=-1
  biomes.append(b)
-catalog=dict(version='1.1',families=family_names+['Your own world'],family_short=family_short+['BLANK'],tone_fields=tone_fields,tones=tones,biomes=biomes)
+# 1.2 curation changes factory recalls only. Imported 1.0/1.1 patches retain
+# their actual parameters. In Plaits VA variant 2, low TIMBRE means narrow
+# pulses, not low brightness; the warm region is around .36-.46, below sync.
+for t in tones:
+ if t['model']==4:
+  j=t['id']%16;t.update(tone=360+(j%4)*25,shape=480+(j%4)*65,cutoff=490+(j%4)*35,filter=2,resonance=0)
+for b in biomes:
+ if b['id']==64:continue
+ for i,tr in enumerate(b['tracks']):
+  if tr['model']==4:
+   tr.update(tone=375+(i%3)*25,shape=500+(i%3)*45,cutoff=500+(i%3)*35,filter=2,resonance=0,level=round(tr['level']*.72))
+   if b['family'] in [0,1,7]:tr.update(attack=max(tr['attack'],300),note=min(tr['note'],67))
+   b['tones'][i]=-1
+# New colors are authored as complementary roles with different articulation.
+for model,prefix in [(12,'Velvet Keys'),(13,'Bloom'),(14,'Breath'),(8,'Earth')]:
+ for j,name in enumerate(['Hearth','Petal','Stillness','Honey','Willow','River','Linen','Amber','Shelter','Dusk','Lagoon','Cedar','Moon','Moss','Dawn','Home']):
+  tones.append(dict(id=len(tones),name=prefix+' '+name,model=model,tone=180+(j%4)*100 if model==12 else 650+(j%4)*90 if model==13 else 90+(j%4)*130 if model==14 else 70+(j%4)*50,harm=(j%4)*250 if model==12 else (j%4)*333 if model==13 else [150,400,700,1000][j%4] if model==14 else 150+(j%4)*100,decay=500+(j%4)*140,attack=[0,180,480,700][j%4],shape=100+(j%4)*150,cutoff=540+(j%4)*45,resonance=0,filter=1,breathe=70+(j%4)*50))
+# Sixteen distinct contours and spectra per family, rather than four repeated
+# parameter recipes with different labels. Keep this deterministic and reviewed.
+colour=[180,240,330,110,420,270,150,380,210,460,300,125,355,195,405,255]
+contour=[420,650,850,540,720,950,480,780,600,900,500,820,680,1000,560,740]
+for x in tones[224:]:
+ j=(x['id']-224)%16;m=x['model']
+ x.update(tone=colour[j] if m==12 else 550+colour[j]//2 if m==13 else colour[j] if m==14 else colour[j]//2,shape=80+j*37,decay=contour[j],attack=[0,120,380,650,50,480,240,720,0,320,160,550,80,780,420,200][j],cutoff=490+(j%6)*32,breathe=60+(j%5)*45)
+ if m==14:x['harm']=[180,400,700,1000,250,550,850,350,650,950,120,480,780,300,600,900][j]
+ if m==8:x.update(harm=100+(j%5)*135+(j//5)*20,attack=min(x['attack'],100),decay=200+(j%7)*80)
+assert len({tuple(t[k] for k in tone_fields) for t in tones[224:]})==64
+new_names=['Quiet Arrival','Breathing Room','Still Lake','Evening Paper','Soft Solstice','Piano in the Moss','Reed Sanctuary','Distant Tide','Velvet Observatory','Woodland Prayer','Luminous Rest','Cedar Lantern','Blue Meditation','Ember Valley','Floating Petals','Return Home']
+for j,name in enumerate(new_names):
+ b=json.loads(json.dumps(biomes[65+j%8]));b.update(id=len(biomes),name=name,tempo=48+(j%6)*4,scale=[4,3,5,1][j%4],macro=[500,0,480,220+(j%3)*30],grain_size=700+(j%3)*100,grain_pos=300,feedback=160,grain_pitch=0)
+ order=[[13,8,12,14,10,13],[12,8,13,7,14,11],[14,8,10,12,13,7],[13,8,12,9,14,10]][j%4]
+ for i,model in enumerate(order):
+  ix=(224 if model==12 else 240 if model==13 else 256 if model==14 else 272 if model==8 else 160 if model==10 else 112 if model==7 else 208 if model==11 else 144)+(j*3+i)%16
+  tr=b['tracks'][i];tr.update({k:tones[ix][k] for k in tone_fields})
+  tr.update(note=36+b['root']+[12,0,19,12,24,7][i],level=[330,260,230,150,150,140][i],length=16,hits=[1,1,2,1,1,1][i],rotate=[0,0,6,8,4,12][i],speed=[4,4,2,4,8,4][i],prob=1000,send=[300,70,300,220,320,300][i],attack=160 if model==12 else 0 if model in [8,9] else 450+(i%3)*120,decay=650 if model==12 else 850)
+  if model==14:tr.update(level=120,harm=700,cutoff=550)
+  b['tones'][i]=-1
+ biomes.append(b)
+# Second 1.2 curation: soften the older FM-led arrangements at their source.
+# Existing IDs and imported user patch values remain untouched. Each family
+# keeps its rhythm/identity; the meditation scenes gain distinct supporting roles.
+fm_colour=[90,150,120,235,180,260,170,210,100,245,320,290,205,135,275,220]
+for j,x in enumerate(tones[48:64]):
+ x.update(tone=fm_colour[j],shape=500,harm=[234,477,234,649,477,477,234,649,234,477,750,649,477,234,649,477][j],cutoff=[610,650,520,690,620,640,590,670,510,620,700,670,630,540,660,610][j],filter=1,resonance=0,attack=[80,110,45,140,90,50,160,120,180,240,60,170,90,400,220,320][j],decay=[600,720,460,650,570,520,800,700,900,880,480,760,630,960,820,920][j],breathe=100+(j%5)*45)
+for b in biomes:
+ if b['id']==64:continue
+ fam=b['family'];j=b['id'];ambient=fam in [0,1] or j>=65
+ if ambient:
+  b['macro'][1]=0  # Slow authored intervals replace unrelated random jumps.
+  b['macro'][2]=465+(j%4)*12
+  b['grain_size']=740+(j%3)*80;b['feedback']=150+(j%4)*25
+ for i,tr in enumerate(b['tracks']):
+  model=tr['model']
+  # A low, airy countervoice replaces the duplicate FM lead in melody scenes.
+  if fam==7 and model==3 and i==5:
+   ix=256+(j%16);tr.update({k:tones[ix][k] for k in tone_fields});model=14
+   tr.update(harm=350,level=115,attack=550,decay=900,cutoff=560)
+  if model==3:
+   ix=48+(j*3+i*2)%16;tr.update({k:tones[ix][k] for k in tone_fields})
+   tr.update(level=min(tr['level'],190 if ambient else 235),note=min(tr['note'],64 if ambient else 72))
+   if ambient:tr.update(attack=220+(j%4)*65,decay=780+(j%3)*60,hits=1+(j%2),length=[16,19,23,17][j%4],speed=4,rotate=(i*3+j)%16,prob=860+(j%3)*45,send=320)
+   elif fam in [2,5,7]:tr.update(attack=100+(j%3)*60,decay=550+(j%4)*85,hits=1+(j%3),speed=2,prob=850+(j%3)*50)
+   else:tr.update(attack=35,decay=290+(j%3)*50)
+  if ambient and model in [6,7,10,11,12,13,14]:
+   tr.update(breathe=180+((j+i*3)%5)*55,prob=920+(i%3)*40)
+   if model!=12:tr.update(attack=max(tr['attack'],380+(i%3)*90),decay=850+(j%3)*60)
+   # Unequal slow cycles rather than six similarly articulated ostinatos.
+   if i>0:tr.update(length=[16,19,23,17,29][(j+i)%5],rotate=(i*3+j)%16)
+  if model==5 and fam in [0,1,2,5,7]:
+   tr.update(tone=min(tr['tone'],300),cutoff=min(tr['cutoff'],680),level=round(tr['level']*.82),breathe=160+(j%3)*70)
+  if model>=3 and fam!=6:tr['resonance']=0
+  if i==0:tr.update(rotate=0,prob=1000)
+  ix=b['tones'][i]
+  if ix>=0 and not all(tr[k]==tones[ix][k] for k in tone_fields):b['tones'][i]=-1
+
+# Final 1.2 voice-colour pass. Distinct body/air/attack recipes for each family;
+# do not make every sound dark or change saved user parameters.
+for x in tones:
+ j=x['id']%16;m=x['model']
+ if m==0:x.update(tone=[90,150,60,220,300,170,260,340,110,195,280,140,230,360,75,180][j],harm=[80,140,40,230,310,170,280,360,110,200,260,130,220,390,65,160][j])
+ elif m==1:x.update(tone=150+(j%6)*70,harm=[200,480,80,640,320,120,700,380,150,260,580,420,800,520,340,180][j],cutoff=620+(j%4)*65)
+ elif m==2:x.update(tone=410+(j%5)*75,harm=[650,850,420,750,950,550,900,300,800,700,450,850,1000,400,750,600][j],filter=1,cutoff=700+(j%4)*60,resonance=0)
+ elif m==6:x.update(harm=[80,350,650,100,480,220,780,0,540,320,160,700,900,430,240,40][j],tone=[0,28,55,90,15,42,125,8,75,35,60,105,160,85,18,5][j],shape=520+(j%5)*90,cutoff=660+(j%4)*55)
+ elif m==7:x.update(tone=300+(j%5)*110,shape=260+(j%4)*150,cutoff=620+(j%4)*55,breathe=220+(j%5)*70)
+ elif m==8:x.update(shape=180+(j%5)*150,tone=min(650,max(x['tone'],150+(j%4)*90)),harm=180+(j%5)*130)
+ elif m==9:x.update(tone=230+(j%4)*130,cutoff=620+(j%4)*55,breathe=120+(j%5)*60)
+ elif m==10:x.update(tone=[260,500,740,380,620,850,460,700,320,580,800,410,660,900,520,760][j],harm=150+(j%5)*150,cutoff=600+(j%4)*60,shape=200+(j%4)*170)
+ elif m==11:x.update(harm=[0,180,360,580,780,1000,120,440,650,900,250,520,720,960,80,840][j],tone=680+(j%4)*90,cutoff=620+(j%5)*45)
+ elif m==12:x.update(tone=[250,420,550,180,650,380,240,590,310,720,470,210,620,280,680,400][j],shape=180+(j%5)*130,cutoff=630+(j%4)*50)
+ elif m==13:x.update(harm=[0,180,370,600,800,1000,100,440,660,930,250,530,730,970,70,850][j],tone=760+(j%3)*100,cutoff=650+(j%4)*45,breathe=350+(j%5)*90)
+ elif m==14:x.update(harm=[250,500,750,1000,180,650,900,380,720,950,120,550,820,320,600,880][j],tone=240+(j%6)*110,shape=220+(j%5)*140,cutoff=650+(j%4)*55)
+ # FM and VA were already individually curated; the revised engine articulation
+ # and pulse mapping now provide their audible new contour.
+for b in biomes:
+ if b['id']==64:continue
+ ambient=b['family'] in [0,1] or b['id']>=65
+ for i,tr in enumerate(b['tracks']):
+  m=tr['model'];j=(b['id']+i*3)%16
+  if m==10:tr.update(tone=350+(j%5)*110,harm=220+(j%4)*160,cutoff=max(tr['cutoff'],600))
+  elif m==13:tr.update(tone=800+(j%3)*80,harm=[100,430,730,950][j%4],cutoff=max(tr['cutoff'],650),breathe=400+(j%4)*100)
+  elif m==11:tr.update(harm=[100,400,700,950][j%4],cutoff=max(tr['cutoff'],610))
+  elif m==12:tr.update(tone=280+(j%5)*85,shape=250+(j%4)*150,cutoff=max(tr['cutoff'],630))
+  elif m==14:tr.update(tone=300+(j%4)*140,shape=350+(j%3)*150,cutoff=max(tr['cutoff'],650))
+  elif m==8:tr.update(shape=300+(j%4)*150,tone=220+(j%4)*100)
+  elif m==7:tr.update(tone=380+(j%4)*120,breathe=300+(j%4)*75)
+  if ambient and m>=3:
+   # Air comes from the voice, not a permanent dark master filter.
+   tr['resonance']=0
+  ix=b['tones'][i]
+  if ix>=0 and not all(tr[k]==tones[ix][k] for k in tone_fields):b['tones'][i]=-1
+assert len({tuple(t[k] for k in tone_fields) for t in tones[224:]})==64
+assert len(tones)==288 and len(biomes)==93
+catalog=dict(version='1.2 development',families=family_names+['Your own world'],family_short=family_short+['BLANK'],tone_fields=tone_fields,tones=tones,biomes=biomes)
 (R/'presets/catalog.json').write_text(json.dumps(catalog,indent=2,ensure_ascii=False)+'\n')
 lines=['/* Generated by tools/generate_presets.py; MIT. Flash-resident factory atlas. */','struct TonePreset { const char *name; int32_t '+','.join(tone_fields)+'; };','static const TonePreset tone_bank[MD_TONE_PRESETS]={']
 for t in tones:lines.append('{'+json.dumps(t['name'])+','+','.join(str(t[k]) for k in tone_fields)+'},')

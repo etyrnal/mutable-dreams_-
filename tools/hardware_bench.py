@@ -8,11 +8,14 @@ from pathlib import Path
 import mido
 import sounddevice as sd
 import numpy as np
+from midi_target import select_port
 
 class Meter:
  def __init__(self):
   self.frames=0;self.energy=0.;self.peak=0.;self.overflows=0;self.nonfinite=0
-  devices=sd.query_devices();idx=next(i for i,d in enumerate(devices) if 'Mutable Dreams' in d['name'] and d['max_input_channels']==2)
+  devices=sd.query_devices();matches=[i for i,d in enumerate(devices) if d['name']=='Mutable Dreams FM-1' and d['max_input_channels']==2]
+  if len(matches)!=1:raise ValueError('Need one unique Mutable Dreams audio input; no audio device opened.')
+  idx=matches[0]
   self.name=devices[idx]['name'];self.stream=sd.InputStream(device=idx,samplerate=44100,channels=2,dtype='float32',blocksize=1024,callback=self.callback)
  def callback(self,x,n,t,status):
   self.frames+=n;self.energy+=float(np.sum(x*x));self.peak=max(self.peak,float(np.max(np.abs(x))));self.overflows+=int(bool(status.input_overflow));self.nonfinite+=int(not np.isfinite(x).all())
@@ -21,8 +24,10 @@ class Meter:
 NAMES=['Kick','Snare','Hat','FM','VA','Rings','Harmonic','Choir']
 class Device:
  def __init__(self,port=None):
-  names=mido.get_input_names();self.name=port or next(n for n in names if 'Mutable Dreams' in n)
-  self.i=mido.open_input(self.name);self.o=mido.open_output(self.name);self.seq=0;self.retries=0;self.read_retries=0
+  self.name=select_port(mido,port);self.i=mido.open_input(self.name)
+  try:self.o=mido.open_output(self.name)
+  except BaseException:self.i.close();raise
+  self.seq=0;self.retries=0;self.read_retries=0
   time.sleep(.35) # CoreMIDI may discard the first packet immediately after opening.
  def close(self):self.i.close();self.o.close()
  def call(self,c,p=()):
@@ -56,7 +61,7 @@ class Device:
    self.read_retries+=1;print('RETRY read-only telemetry',flush=True);raw=self.call(1)
   w=struct.unpack('<%dI'%(len(raw)//4),raw);assert w[0] in [1,2]
   self.protocol=w[0]
-  return dict(element_modes=w[46] if len(w)>46 else None,motion=w[41] if len(w)>41 else None,boot_sound=w[42] if len(w)>42 else None,page=w[43] if len(w)>43 else None,help=(w[44] if w[44]<0x80000000 else w[44]-0x100000000) if len(w)>44 else None,intro=w[45] if len(w)>45 else None,quality_reductions=w[40] if len(w)>40 else 0,master=w[39] if len(w)>39 else None,protocol=w[0],ms=w[1],cpu=w[2],cpu_peak=w[3],xruns=w[4],overloads=w[5],frames=w[6],nonfinite=w[7],dropped=w[8],quality=w[9],playing=w[10],events=list(w[11:17]),models=list(w[17:23]),filters=list(w[23:29]),memory=w[29],patch_version=w[30],grain_writes=w[31],freeze=w[32],peak=struct.unpack('<f',struct.pack('<I',w[33]))[0],voice_quanta=w[34],skipped_quanta=w[35],tempo=w[36],callback_peak_us=w[37],callback_budget_us=w[38])
+  return dict(ui_frames=w[47] if len(w)>47 else None,ui_frame_peak_ms=w[48] if len(w)>48 else None,element_modes=w[46] if len(w)>46 else None,motion=w[41] if len(w)>41 else None,boot_sound=w[42] if len(w)>42 else None,page=w[43] if len(w)>43 else None,help=(w[44] if w[44]<0x80000000 else w[44]-0x100000000) if len(w)>44 else None,intro=w[45] if len(w)>45 else None,quality_reductions=w[40] if len(w)>40 else 0,master=w[39] if len(w)>39 else None,protocol=w[0],ms=w[1],cpu=w[2],cpu_peak=w[3],xruns=w[4],overloads=w[5],frames=w[6],nonfinite=w[7],dropped=w[8],quality=w[9],playing=w[10],events=list(w[11:17]),models=list(w[17:23]),filters=list(w[23:29]),memory=w[29],patch_version=w[30],grain_writes=w[31],freeze=w[32],peak=struct.unpack('<f',struct.pack('<I',w[33]))[0],voice_quanta=w[34],skipped_quanta=w[35],tempo=w[36],callback_peak_us=w[37],callback_budget_us=w[38])
  def command_many(self,items):
   if getattr(self,'protocol',1)<2:
    for c,t,v in items:self.command(c,t,v)
@@ -71,7 +76,7 @@ class Device:
    time.sleep(.04)
  def patch(self):
   first=self.call(4,[0,0]);magic,version=struct.unpack_from('<II',first);assert magic==0x4D445231
-  size={1:392,2:500,3:620,4:652,5:1292,6:1292}[version]
+  size={1:392,2:500,3:620,4:652,5:1292,6:1292,7:2100}[version]
   data=first+b''.join(self.call(4,[off&127,off>>7]) for off in range(224,size,224));assert len(data)==size
   return data
  def remote(self,p):
