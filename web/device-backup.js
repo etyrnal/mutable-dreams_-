@@ -144,7 +144,8 @@ const PB = (() => {
     const ins = [...access.inputs.values()].filter((p) => p.state !== "disconnected" &&
       (NAME_RE.test(p.name || "") || /fm-?1|felucca|composite|sinco|usb-midi/i.test(p.name || "")));   // never probe other gear
     ins.sort((a, b) => NAME_RE.test(b.name) - NAME_RE.test(a.name));
-    const outs = [...access.outputs.values()];
+    const outs = [...access.outputs.values()].filter(p=>p.state!=="disconnected");
+    if(ins.some(p=>ins.filter(q=>q.name===p.name).length>1)||outs.some(p=>outs.filter(q=>q.name===p.name).length>1))throw fail("ambiguous","Two MIDI devices have identical names. Disconnect the other FM-1 before connecting this editor; no controls were sent.");
     const base = (s) => (s || "").replace(/\s+\d+$/, "");
     let other = null;
     for (const input of ins) {

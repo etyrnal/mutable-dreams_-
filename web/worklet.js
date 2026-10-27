@@ -43,15 +43,34 @@ class Fm1 extends AudioWorkletProcessor {
       this.app = globalThis.fm1App || {};
       if (this.app.load) this.app.load(this);
       const max = this.ex.web_store_max();
-      for (const [obj, bytes] of Object.entries(m.store || {})) {
-        const b = new Uint8Array(bytes).subarray(0, max);
-        new Uint8Array(this.mem.buffer, this.ex.web_store(+obj), b.length).set(b);
-        this.ex.web_store_set_len(+obj, b.length);
+      let storageRejected = 0;
+      const store = m.store === undefined ? {} : m.store;
+      const validStore = store && typeof store === "object" && !Array.isArray(store);
+      if (!validStore) storageRejected++;
+      for (const [obj, bytes] of Object.entries(validStore ? store : {})) {
+        const id = Number(obj);
+        // JSON turns Uint8Array into an indexed object. Accept that historical
+        // representation, but never coerce invalid bytes or truncate a bank.
+        let b = bytes;
+        if (b && typeof b === "object" && !Array.isArray(b) && !(b instanceof Uint8Array)) {
+          const keys = Object.keys(b);
+          b = keys.every((key, i) => key === String(i)) ? Object.values(b) : null;
+        }
+        if (!Number.isInteger(id) || String(id) !== obj || id < 0 || id >= this.ex.web_nobj() ||
+            !(Array.isArray(b) || b instanceof Uint8Array) || b.length > max ||
+            !Array.from(b).every(v => Number.isInteger(v) && v >= 0 && v <= 255)) {
+          storageRejected++;
+          continue;
+        }
+        // web_store returns null for an invalid ID; validate before touching
+        // WASM memory so damaged local data cannot write at address zero.
+        new Uint8Array(this.mem.buffer, this.ex.web_store(id), b.length).set(b);
+        this.ex.web_store_set_len(id, b.length);
       }
       this.sentWrites = this.ex.web_store_writes();
       this.ex.web_master(m.master ?? 2800);
       this.ex.web_boot();
-      this.port.postMessage({ type: "ready" });
+      this.port.postMessage({ type: "ready", storageRejected });
     } else if (!this.ex) {
       return;
     } else if (m.type === "buttons") {
