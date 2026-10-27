@@ -8,15 +8,15 @@ const image=fs.readFileSync(root+'/app/build/san/dreams-map-test.mddb');assert.e
 const bad=Buffer.from(image);bad[35]^=1;assert.throws(()=>PB.parse(bad));assert.throws(()=>PB.parse(image.slice(0,-1)));
 const wrong=Buffer.from(image);wrong.writeUInt16LE(1,16);wrong.writeUInt32LE(PB.crc32(wrong,0,wrong.length-4),wrong.length-4);assert.throws(()=>PB.parse(wrong));
 const le=n=>[n&255,n>>>8&255,n>>>16&255,n>>>24&255];
-const patch=Array.from({length:1292},(_,i)=>(i*17)&255);
+const patch=Array.from({length:2100},(_,i)=>(i*17)&255);
 class Mock{
  constructor(){this.q=[];this.log=[];this.lost=false;this.data=[];this.token=7;this.parallel=0;this.max=0;}
  send(p){this.log.push(p);this.parallel++;this.max=Math.max(this.max,this.parallel);const c=p[4];let status=0,data=[];
   if(p[2]===0x4c){this.q.push([0xf0,0x7d,0x4c,0x43,c,0xf7]);return true;}
-  if(c===7)data=[1,7,1292,22,16,64,224,77].flatMap(le);
-  if(c===8)data=[1292,PB.crc32(patch),4].flatMap(le);
+  if(c===7)data=(this.capability||[1,7,2100,22,16,64,288,93]).flatMap(le);
+  if(c===8)data=[2100,PB.crc32(patch),4].flatMap(le);
   if(c===5){assert.equal(p[8],4);const off=p[6]|p[7]<<7;data=patch.slice(off,off+224);}
-  if(c===11){const h=unpack(p.slice(6,-1));assert.equal(new DataView(h.buffer).getUint32(0,true),1292);this.data=[];data=[this.token];}
+  if(c===11){const h=unpack(p.slice(6,-1));assert.equal(new DataView(h.buffer).getUint32(0,true),2100);this.data=[];data=[this.token];}
   if(c===12){assert.equal(p[6],this.token);const off=p[7]|p[8]<<7;assert.equal(off,this.data.length);this.data.push(...unpack(p.slice(9,-1)));}
   if(c===13){assert.deepEqual(this.data,patch);}
   if(c===9){data=Array(208).fill(0);}
@@ -31,11 +31,19 @@ assert.deepEqual(await d.snapshot(),patch);await d.upload(patch);assert.deepEqua
 await assert.rejects(()=>d.upload([1,2,3]));const state=await d.state();assert.equal(state.models.length,6);assert.equal(state.knobs.length,4);
 const saves=link.log.length;await d.bank(0,15,3,3,'MY OWN BIOME');assert.equal(link.log.length,saves+1);assert.equal(link.log.at(-1).length,35);await d.close();assert(link.closed);
 await assert.rejects(()=>d.call(7));
-// 1.0 supports direct update, but not the new editor/backup protocol. Explain
-// the correct path before sending an unsupported capabilities request.
+// 1.0 has no new editor/backup protocol. Reject before probing capabilities.
 const find=PB.find,legacy=new Mock();PB.find=async()=>({link:legacy,id:'FM-1_710010000'});
-try{await assert.rejects(()=>Device.connect({}),/1\.0 detected.*Stock V15 is not required/);assert(legacy.closed);assert.equal(legacy.log.length,0);}
+try{await assert.rejects(()=>Device.connect({}),/1\.0 detected.*matching 1\.2 development firmware/);assert(legacy.closed);assert.equal(legacy.log.length,0);}
 finally{PB.find=find;}
+// A released 1.1 endpoint receives only the read-only capability request.
+const oldEditor=new Mock();oldEditor.capability=[1,6,1292,22,16,64,224,77];
+PB.find=async()=>({link:oldEditor,id:'FM-1_710010100'});
+try{await assert.rejects(()=>Device.connect({}),/matching 1\.2 development/);assert(oldEditor.closed);assert.equal(oldEditor.log.length,1);assert.equal(oldEditor.log[0][4],7);}
+finally{PB.find=find;}
+// Identical device names must fail before opening a port or creating a link.
+let opened=0;const port=()=>({name:'Mutable Dreams FM-1',state:'connected',open:async()=>opened++});
+await assert.rejects(()=>find({inputs:new Map([[1,port()],[2,port()]]),outputs:new Map([[1,port()]])},()=>{throw Error('Must not link');}),/identical names/);
+assert.equal(opened,0);
 // Parse the complete packaged page and every inline script without executing UI or audio.
 const html=fs.readFileSync(process.argv[2],'utf8');assert(!/__DEVICE_(?:UI|EDITOR|BACKUP)__|__RANGE_CONTROLS__|__WORKLET__|__WASM__/.test(html));
 let count=0;for(const m of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)){if(m[0].slice(0,m[0].indexOf('>')).includes('application/octet-stream'))continue;new vm.Script(m[1]);count++;}

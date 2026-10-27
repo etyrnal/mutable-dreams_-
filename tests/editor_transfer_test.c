@@ -8,15 +8,42 @@ static uint8_t response[224];static uint32_t response_n;
 static int req(int cmd,const uint8_t *data,unsigned n){uint8_t p[300]={0x7d,0x4d,0x44,cmd,1};assert(n<=sizeof p-5);if(n)memcpy(p+5,data,n);response_n=0;int rc=editor_reply(p,n+5,response,&response_n);assert(response_n<=sizeof response);return rc;}
 static unsigned begin(const md_patch *p,uint32_t crc){uint32_t h[]={sizeof *p,crc};uint8_t b[16];unsigned n=packed((void*)h,sizeof h,b);assert(!req(11,b,n));return response[0];}
 static void chunks(const md_patch *p,unsigned token){for(unsigned off=0;off<sizeof *p;off+=196){uint8_t b[240]={token,off&127,off>>7};unsigned n=sizeof *p-off;if(n>196)n=196;n=packed((uint8_t*)p+off,n,b+3);assert(!req(12,b,n+3));}}
+static void test_clock_rollover(void){
+ uint32_t original_ms=now_ms;
+ const uint32_t starts[]={0,0x7ffffff0u,0xfffff000u,0xfffffc17u,0xffffffffu};
+ for(unsigned k=0;k<sizeof starts/sizeof starts[0];k++){
+  now_ms=starts[k];md_patch desired=*md_state();desired.tempo=87+k;
+  unsigned token=begin(&desired,dream_crc(&desired,sizeof desired));uint8_t t=token;
+  now_ms+=4000;chunks(&desired,token);now_ms+=4999;assert(!req(13,&t,1));assert(md_state()->tempo==87+(int)k);
+  token=begin(&desired,dream_crc(&desired,sizeof desired));t=token;chunks(&desired,token);now_ms+=5001;
+  assert(req(13,&t,1)==6);app_input_only();assert(!editor_length);
+  now_ms=starts[k];dream_intro();int got=-1;assert(app_expect("intro",&got)&&got);
+  now_ms+=3199;assert(app_expect("intro",&got)&&got);now_ms++;app_input_only();assert(app_expect("intro",&got)&&!got);
+  now_ms=starts[k];app_say("ROLLOVER","");now_ms+=1399;app_input_only();assert(dream_ui.msg[0]);now_ms++;app_input_only();assert(!dream_ui.msg[0]);
+  now_ms=starts[k];bank_kind=0;bank_slot=15;bank_armed=-1;assert(bank_action(1)==5);
+  now_ms+=2999;assert(!bank_action(1));assert(bank_action(1)==5);now_ms+=3001;assert(bank_action(1)==5);
+  now_ms+=3001;app_input_only();assert(bank_armed==-1);
+  now_ms=starts[k];pulse_active=1;pulse_start[0]=now_ms;now_ms+=159;app_input_only();assert(pulse_active&1);now_ms++;app_input_only();assert(!(pulse_active&1));
+  now_ms=starts[k];dream_ui.dirty=0;dream_ui.frame_at=now_ms;dream_ui.frame_wait=66;uint32_t frames=ui_frames;
+  now_ms+=65;app_frame();assert(ui_frames==frames);now_ms++;app_frame();assert(ui_frames==frames+1);
+  /* Already expired actions stay inactive even after a full counter cycle. */
+  now_ms=starts[k];app_input_only();assert(!intro_active&&!editor_length&&bank_armed==-1&&!dream_ui.msg[0]&&!pulse_active);
+ }
+ now_ms=original_ms;
+ puts("PASS clock rollover: live uploads, timeout rejection, overwrite confirmation, intro, message, pulse and UI cadence across UINT32_MAX");
+}
 int main(void){
  boot();run_ms(100);dream_dismiss_intro();md_patch initial=*md_state(),desired=initial;desired.tempo=92;
  assert(!req(7,0,0)&&response_n==32);assert(!req(9,0,0)&&response_n==208);
- assert(!req(8,0,0));assert(md_stored_size==1292);assert(!memcmp(md_stored_snapshot,&initial,1292));
- dream_cmd(MD_TEMPO,0,110);run_ms(20);assert(!memcmp(md_stored_snapshot,&initial,1292));
+ assert(!req(8,0,0));assert(md_stored_size==2100);assert(!memcmp(md_stored_snapshot,&initial,sizeof initial));
+ dream_cmd(MD_TEMPO,0,110);run_ms(20);assert(!memcmp(md_stored_snapshot,&initial,sizeof initial));
  assert(app_backup_validate(0,&initial,sizeof initial));
  md_patch legacy=initial;legacy.version=4;assert(app_backup_validate(0,&legacy,652));
- legacy.version=5;assert(app_backup_validate(0,&legacy,sizeof legacy));
- assert(md_state()->tempo==110); /* validation never loads the old project */assert(!app_backup_validate(1,&initial,sizeof initial));assert(!app_backup_validate(0,&initial,20));
+ legacy.version=5;assert(app_backup_validate(0,&legacy,1292));
+ legacy.version=6;assert(app_backup_validate(0,&legacy,1292));
+ UserBiome oldbiome={0};oldbiome.magic=0x4d445542;memcpy(oldbiome.name,"LEGACY WORLD",12);oldbiome.patch=legacy;assert(app_backup_validate(OBJ_USER,&oldbiome,1320));
+ assert(!plat_store_save(OBJ_USER,&oldbiome,1320));bank_kind=0;bank_slot=0;assert(!bank_action(0));assert(md_state()->version==7&&!md_state()->sequence[0].enabled);
+ assert(md_state()->tempo==initial.tempo); /* validation never loads the old project */assert(!app_backup_validate(1,&initial,sizeof initial));assert(!app_backup_validate(0,&initial,20));
  md_patch bad=initial;bad.version=77;assert(!app_backup_validate(0,&bad,sizeof bad));bad=initial;bad.track[2].model=99;assert(!app_backup_validate(0,&bad,sizeof bad));
  for(unsigned obj=0;obj<23;obj++)if(obj!=1)assert(app_backup_validate(obj,0,0));
  unsigned token=begin(&desired,dream_crc(&desired,sizeof desired));uint8_t t=token;
@@ -31,6 +58,7 @@ int main(void){
  ToneBank tones=tone_bank_io;tones.used=0x10000;assert(!app_backup_validate(22,&tones,sizeof tones));
  tones=tone_bank_io;tones.tone[15].ext.notes[2]=99;assert(!app_backup_validate(22,&tones,sizeof tones));
  assert(!plat_store_save(OBJ_PATCH,&desired,sizeof desired));app_backup_restored();assert(md_state()->tempo==92&&!md_playing()&&!md_clock_source()&&!dream_reloading);
+ test_clock_rollover();
  dream_cmd(MD_CLOCK_SOURCE,0,1);run_ms(20);assert(app_backup_playing());assert(!dream_install(&initial,sizeof initial));
  puts("PASS editor capabilities/state, atomic snapshot, bounded upload, CRC/version/range/timeout/busy rejection, all 16/64 slots, overwrite guard, backup save lock, saved-state reload");return 0;
 }
