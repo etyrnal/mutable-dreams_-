@@ -105,6 +105,7 @@ void Resonator::Process(const float* in, float* out, float* aux, size_t size) {
     cached_brightness_=brightness_;cached_damping_=damping_;cached_resolution_=resolution_;filters_valid_=true;
   }
   int32_t num_modes=cached_num_modes_;
+#ifndef MD_REFERENCE_RESONATOR
   // Mutable Dreams: the steady-position path keeps each SVF's state in
   // registers for a whole tile. Same modes, gain and sample rate as before.
   if(previous_position_==position_&&size<=64){
@@ -113,10 +114,25 @@ void Resonator::Process(const float* in, float* out, float* aux, size_t size) {
     for(int32_t i=0;i<num_modes;i++)f_[i].ProcessAdd<FILTER_MODE_BAND_PASS>(input,(i&1)?aux:out,size,pickup.Next());
     return;
   }
+  // Keep every mode and the original gain ramp when the pickup moves too.
+  // Sample order within each mode and summation order remain unchanged.
+  // This avoids repeatedly spilling six banks of SVF state on the FM-1.
+  if(size<=64){
+    float input[64];for(size_t k=0;k<size;k++){input[k]=in[k]*.125f;out[k]=aux[k]=0;}
+    CosineOscillator start,end;
+    start.Init<COSINE_OSCILLATOR_APPROXIMATE>(previous_position_);
+    end.Init<COSINE_OSCILLATOR_APPROXIMATE>(position_);start.Start();end.Start();
+    for(int32_t i=0;i<num_modes;i++){
+      float gain=start.Next(),increment=(end.Next()-gain)/size;
+      f_[i].ProcessBandPassAddRamp(input,(i&1)?aux:out,size,gain,increment);
+    }
+    previous_position_=position_;return;
+  }
+#endif
   
   // Mutable Dreams: interpolate pickup gains per tile, not a new cosine
-  // oscillator for every sample. Position is constant in our modal subset;
-  // the interpolated first tile retains a smooth reset/position transition.
+  // oscillator for every sample. Reference / large-block fallback retains
+  // smooth reset and position transitions.
   float gain[kMaxModes],increment[kMaxModes];
   CosineOscillator start,end;
   start.Init<COSINE_OSCILLATOR_APPROXIMATE>(previous_position_);

@@ -17,14 +17,14 @@ int app_sysex(const uint8_t *p,uint32_t n){
  if(n<5)return 1;
  uint8_t tx[280]={0xf0,0x7d,0x4d,0x44,p[3],p[4],0},raw[224];uint32_t len=0,at=7;
  if(p[3]==1&&n==5){
-  uint32_t words[47]={0},f=plat_lock();const md_stats *s=md_status();const md_patch *v=md_state();
+  uint32_t words[49]={0},f=plat_lock();const md_stats *s=md_status();const md_patch *v=md_state();
   words[0]=2;words[1]=plat_ms();words[2]=plat_cpu_pct();words[3]=cpu_peak;words[4]=plat_xruns();words[5]=overloads;
   words[6]=s->frames;words[7]=s->nonfinite;words[8]=s->dropped_commands;words[9]=v->quality;words[10]=md_playing();
   for(int i=0;i<6;i++){words[11+i]=s->events[i];words[17+i]=v->track[i].model;words[23+i]=v->track[i].filter;}
   words[29]=md_memory_bytes();words[30]=v->version;words[31]=s->grain_writes;words[32]=v->freeze;
   memcpy(&words[33],&s->peak,4);words[34]=s->voice_quanta;words[35]=s->skipped_quanta;words[36]=v->tempo;words[37]=plat_audio_peak_us();words[38]=APP_BLOCK*1000000u/MD_RATE;words[39]=plat_master();words[40]=s->quality_reductions;
-  words[41]=dream_prefs.motion;words[42]=dream_prefs.boot_sound;words[43]=dream_ui.page;words[44]=(uint32_t)dream_ui.help;words[45]=intro_until&&plat_ms()<intro_until;
-  words[46]=s->element_modes;plat_unlock(f);len=47*4;memcpy(raw,words,len);
+  words[41]=dream_prefs.motion;words[42]=dream_prefs.boot_sound;words[43]=dream_ui.page;words[44]=(uint32_t)dream_ui.help;words[45]=intro_active&&(uint32_t)(plat_ms()-intro_start)<3200;
+  words[46]=s->element_modes;words[47]=ui_frames;words[48]=ui_frame_peak_ms;plat_unlock(f);len=49*4;memcpy(raw,words,len);
  }else if(p[3]==2&&n>=9&&n<=69&&(n-5)%4==0){
   uint32_t count=(n-5)/4,f=plat_lock();
   for(unsigned k=5;k<n;k+=4)if(p[k]>=MD_COMMAND_COUNT)tx[6]=1;
@@ -32,7 +32,7 @@ int app_sysex(const uint8_t *p,uint32_t n){
   if(!tx[6])for(unsigned k=5;k<n;k+=4)md_command(p[k],p[k+1],(int)(p[k+2]|p[k+3]<<7)-8192);
   plat_unlock(f);
  }
- else if(p[3]==3&&n==5){uint32_t f=plat_lock();cpu_peak=0;plat_audio_peak_reset();plat_unlock(f);}
+ else if(p[3]==3&&n==5){uint32_t f=plat_lock();cpu_peak=ui_frame_peak_ms=0;plat_audio_peak_reset();plat_unlock(f);}
  else if(p[3]==4&&n==7){unsigned off=p[5]|p[6]<<7;if(off>=sizeof(md_patch))tx[6]=1;else{len=sizeof(md_patch)-off;if(len>224)len=224;uint32_t f=plat_lock();memcpy(raw,((const uint8_t*)md_state())+off,len);plat_unlock(f);}}
  else if(p[3]==6&&(n==5||n==6)){
   md_stored_size=0;md_stored_generation=(md_stored_generation+1)&127;

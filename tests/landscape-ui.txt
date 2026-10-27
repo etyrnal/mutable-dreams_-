@@ -1,0 +1,41 @@
+wait 3400
+tap HOME
+shot garden-a.png
+wait 700
+shot garden-b.png
+tap FX
+shot water-a.png
+wait 700
+shot water-b.png
+tap GLO
+tap GLO
+shot orbit-a.png
+wait 700
+shot orbit-b.png
+tap SEQ
+shot rhythm-a.png
+wait 700
+shot rhythm-b.png
+tap HOME
+tap GLO
+tap GLO
+tap GLO
+tap GLO
+expect page 11
+spin K1 -1
+expect motion 0
+tap HOME
+wait 2000
+shot still-a.png
+wait 700
+shot still-b.png
+press HOME
+wait 900
+expect help 6
+release HOME
+wait 100
+shot live-guide.png
+tap HOME
+expect page 0
+expect queue_drops 0
+expect invalid 0

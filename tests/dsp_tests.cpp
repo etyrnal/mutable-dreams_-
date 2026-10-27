@@ -45,18 +45,18 @@ int main(){
  // Old v1 data remains readable, with explicit neutral defaults for new features.
  struct OldPatch{uint32_t magic,version,seed;int32_t macro[4],tempo,locked,freeze,grain_size,grain_pos,feedback,quality;int32_t tracks[6][14];}old={};
  md_init();p=*md_state();memcpy(&old,&p,56);old.version=1;for(int i=0;i<6;i++)memcpy(old.tracks[i],&p.track[i],56);
- assert(md_import(&old,sizeof old));assert(md_state()->version==6&&md_state()->track[5].ratchet==1);assert(md_state()->duck_source==-1);old.tracks[0][7]=0;assert(!md_import(&old,sizeof old));
+ assert(md_import(&old,sizeof old));assert(md_state()->version==7&&md_state()->track[5].ratchet==1);assert(md_state()->duck_source==-1);old.tracks[0][7]=0;assert(!md_import(&old,sizeof old));
  puts("PASS v1 patch migration and corrupt legacy rejection");
  // Import the exact v2 layout, preserving its parameter values and migration shape.
  struct V2Patch{uint32_t magic,version,seed;int32_t head[11];int32_t tracks[6][17];int32_t globals[9];}v2={};
  md_init();p=*md_state();memcpy(&v2,&p,56);v2.version=2;memcpy(v2.globals,&p.root,36);
  for(int i=0;i<6;i++){memcpy(v2.tracks[i],&p.track[i],68);v2.tracks[i][0]=3;v2.tracks[i][3]=777;}
- assert(md_import(&v2,sizeof v2));assert(md_state()->track[5].shape==777&&md_state()->track[5].decay==777&&md_state()->version==6);
+ assert(md_import(&v2,sizeof v2));assert(md_state()->track[5].shape==777&&md_state()->track[5].decay==777&&md_state()->version==7);
  v2.tracks[0][0]=99;assert(!md_import(&v2,sizeof v2));puts("PASS v2 patch migration / corrupt model rejection");
 
  // Exact v3 prefix is preserved; unknown names remain explicitly custom.
  md_init();p=*md_state();unsigned char v3[620];memcpy(v3,&p,620);((uint32_t*)v3)[1]=3;
- assert(md_import(v3,sizeof v3));assert(md_state()->version==6&&md_state()->biome_id==-1&&md_state()->tone_preset[0]==-1);
+ assert(md_import(v3,sizeof v3));assert(md_state()->version==7&&md_state()->biome_id==-1&&md_state()->tone_preset[0]==-1);
  assert(!memcmp((const unsigned char*)md_state()+8,v3+8,612));puts("PASS v3 migration preserves all 153 parameter words / marks custom names");
  // Every factory Biome must be valid, audible and genuinely different; Blank stays silent even after frozen tape.
  unsigned biome_hash[MD_BIOMES]={};
@@ -77,7 +77,7 @@ int main(){
   for(int b=0;b<2757;b++){md_render(out,128);for(float x:out){assert(std::isfinite(x));energy+=x*x;}}
   if(energy<=1e-6){fprintf(stderr,"Silent preset %d %s energy %g\n",id,md_tone_name(id),energy);return 2;}
  }
- puts("PASS all 224 tone presets audible / 8 seconds each; rhythm, notes, mix and mute preserved");
+ printf("PASS all %d tone presets audible / 8 seconds each; rhythm, notes, mix and mute preserved\n",MD_TONE_PRESETS);
  md_init();md_command(MD_PLAY,0,1);render(2500);md_command(MD_FREEZE,0,1);md_command(MD_SCENE,0,MD_BLANK_BIOME);render(1);
  for(int b=0;b<500;b++){md_render(out,128);for(float x:out)assert(x==0);}
  md_command(MD_TRIGGER,0,60);render(100);assert(md_status()->events[0]>0&&md_status()->peak>0);puts("PASS Blank clears previous frozen audio / keyboard still plays");
@@ -97,7 +97,7 @@ int main(){
   for(int i=0;i<6;i++){p.track[i].model=m;p.track[i].filter=mode;p.track[i].resonance=1000;p.track[i].breathe=1000;p.track[i].cutoff=i%2?0:1000;p.track[i].hits=p.track[i].length;p.track[i].prob=1000;p.track[i].speed=1;p.track[i].ratchet=4;}
   assert(md_load(&p));md_command(MD_PLAY,0,1);render(3446);assert(!md_status()->nonfinite&&!md_status()->dropped_commands);
  }
- puts("PASS 24 filter/engine combinations at extreme resonance, cutoff, repeats and feedback / 10s each");
+ printf("PASS %d filter/engine combinations at extreme resonance, cutoff, repeats and feedback / 10s each\n",MD_MODELS*3);
  // A stopped, never-triggered rack must not spend time in the six DSP engines.
  md_init();render(100);assert(md_status()->voice_quanta==0&&md_status()->skipped_quanta>0);assert(md_status()->peak==0);
  puts("PASS inactive voice DSP skipped / exact startup silence");
@@ -150,18 +150,23 @@ int main(){
  md_init();md_command(MD_PLAY,0,1);render(2500);md_command(MD_PANIC,0,0);md_command(MD_FREEZE,0,1);md_command(MD_MACRO,3,1000);
  for(int b=0;b<5000;b++){md_render(out,128);for(float x:out)assert(x==0.0f);}
  assert(md_memory_bytes()>250000);puts("PASS expanded tape: panic/freeze remains exactly silent for 14.5s / no stale audio");
- // ECO's reduced engine clock must retain concert pitch, including odd render fragments.
+ // ECO's reduced engine clock must retain concert pitch, including odd
+ // fragments. A warm pulse can cross zero twice per cycle; measure its actual
+ // fundamental instead of mistaking those extra crossings for an octave jump.
  for(int model: {MD_FM,MD_VA,MD_HARMONIC}){
-  int crossings[2]={};
+  int measured[2]={};
   for(int quality=0;quality<2;quality++){
-   md_init();p=*md_state();p.quality=quality;p.scale=0;p.macro[2]=500;p.macro[3]=0;
-   for(int i=0;i<6;i++){p.track[i].model=model;p.track[i].mute=i!=0;p.track[i].attack=0;p.track[i].decay=1000;p.track[i].filter=0;p.track[i].tone=0;p.track[i].harm=model==MD_VA?500:0;p.track[i].shape=model==MD_FM?500:model==MD_HARMONIC?1000:150;}
-   assert(md_load(&p));md_command(MD_TRIGGER,0,69);render(100);float prev=out[254];unsigned left=44100,part=0;
-   const unsigned fragments[]={127,1,31,97};
-   while(left){unsigned n=fragments[part++%4];if(n>left)n=left;md_render(out,n);for(unsigned k=0;k<n;k++){float x=out[k*2];assert(std::isfinite(x));if(prev<=0&&x>0)crossings[quality]++;prev=x;}left-=n;}
+   md_init();p=*md_state();p.quality=quality;p.scale=0;p.macro[2]=500;p.macro[3]=0;p.fx_level=0;
+   for(int i=0;i<6;i++){p.track[i].model=model;p.track[i].mute=i!=0;p.track[i].attack=0;p.track[i].decay=1000;p.track[i].filter=0;p.track[i].tone=0;p.track[i].harm=model==MD_VA?500:0;p.track[i].shape=model==MD_FM?500:model==MD_HARMONIC?1000:150;p.track[i].breathe=0;p.ext[i].tides=0;}
+   assert(md_load(&p));md_command(MD_TRIGGER,0,69);render(100);unsigned at=0,part=0;
+   const unsigned fragments[]={127,1,31,97};static float signal[44100];
+   while(at<44100){unsigned n=fragments[part++%4];if(n>44100-at)n=44100-at;md_render(out,n);for(unsigned k=0;k<n;k++){float x=out[k*2];assert(std::isfinite(x));signal[at++]=x;}}
+   auto energy=[&](double hz){double re=0,im=0;for(int j=0;j<44100;j++){double w=6.283185307179586*j/44100,x=signal[j]*(.5-.5*cos(w));re+=x*cos(w*hz);im-=x*sin(w*hz);}return re*re+im*im;};
+   double peak=0;for(int hz=430;hz<=450;hz++){double e=energy(hz);if(e>peak){peak=e;measured[quality]=hz;}}
+   assert(peak>1&&peak>16*energy(220)&&peak>energy(880));
   }
-  printf("ECO/FULL pitch model %d: %d/%d positive crossings per second\n",model,crossings[0],crossings[1]);
-  assert(abs(crossings[0]-crossings[1])<=3);assert(crossings[0]>=435&&crossings[0]<=445);
+  printf("ECO/FULL fundamental model %d: %d/%d Hz\n",model,measured[0],measured[1]);
+  assert(abs(measured[0]-measured[1])<=1);assert(measured[0]>=439&&measured[0]<=441);
  }
  puts("PASS ECO pitch compensation / odd fragment continuity");
  for(int voices=2;voices<=3;voices++){
@@ -170,10 +175,17 @@ int main(){
  }
  puts("PASS FULL admission guard keeps 2 Rings / sends 3 Rings to ECO before render");
  for(int model : {MD_FM,MD_HARMONIC})for(int count : {4,5}){
-  md_init();p=*md_state();p.quality=1;for(int i=0;i<6;i++){p.track[i].model=model;p.track[i].mute=i>=count;p.track[i].hits=p.track[i].length;p.track[i].prob=1000;p.track[i].speed=1;}
+  md_init();p=*md_state();p.quality=1;p.fx_level=0; // Explicitly test the dry engine budget, independent of factory defaults.
+for(int i=0;i<6;i++){p.track[i].model=model;p.track[i].mute=i>=count;p.track[i].hits=p.track[i].length;p.track[i].prob=1000;p.track[i].speed=1;}
   assert(md_load(&p));md_command(MD_PLAY,0,1);render(1);assert(md_state()->quality==(count==4));assert(md_status()->quality_reductions==(unsigned)(count==5));
  }
  puts("PASS measured FULL limits: 4 FM/Harmonic stay FULL, 5 use ECO before render");
+ for(int model : {MD_FM,MD_HARMONIC})for(int count : {3,4}){
+  md_init();p=*md_state();p.quality=1;p.fx_level=500;
+  for(int i=0;i<6;i++){p.track[i].model=model;p.track[i].mute=i>=count;p.track[i].hits=p.track[i].length;p.track[i].prob=1000;p.track[i].speed=1;}
+  assert(md_load(&p));md_command(MD_PLAY,0,1);render(1);assert(md_state()->quality==(count==3));assert(md_status()->quality_reductions==(unsigned)(count==4));
+ }
+ puts("PASS FULL admission counts shared effects: 3 FM/Harmonic stay FULL, 4 use ECO");
  for(int kind=0;kind<2;kind++){
   md_init();p=*md_state();p.quality=1;const int techno[6]={0,2,1,3,5,0};
   for(int i=0;i<6;i++){p.track[i].model=kind?techno[i]:MD_SNARE;p.track[i].hits=p.track[i].length;p.track[i].prob=1000;p.track[i].speed=1;}

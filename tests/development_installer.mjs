@@ -6,7 +6,7 @@ new vm.Script(scripts[0]);
 const elements=new Map(),element=id=>{if(!elements.has(id))elements.set(id,{textContent:'',value:0,disabled:false,addEventListener(){},setAttribute(){}});return elements.get(id);};
 const ctx=vm.createContext({document:{getElementById:element,querySelectorAll:()=>[],documentElement:{}},window:{addEventListener(){}},navigator:{},setTimeout:fn=>setTimeout(fn,0),clearTimeout,performance,crypto:webcrypto,atob,Uint8Array,console});
 vm.runInContext(scripts[0],ctx);
-const meta=vm.runInContext('meta',ctx),raw=Buffer.from(meta.data,'base64');assert(raw.equals(firmware));assert.equal(meta.product,'FM-1_710010100');assert.equal(meta.sha256,createHash('sha256').update(raw).digest('hex'));
+const meta=vm.runInContext('meta',ctx),raw=Buffer.from(meta.data,'base64');assert(raw.equals(firmware));assert.equal(meta.product,'FM-1_710010200');assert.equal(meta.sha256,createHash('sha256').update(raw).digest('hex'));
 assert.equal(vm.runInContext('productOf(Uint8Array.from(atob(meta.data),c=>c.charCodeAt(0)))',ctx),meta.product);
 assert.equal(vm.runInContext('STOCK_SHA256',ctx),'db1642b2b6fa5c2cccb11ffd13878068bb28601678d3644049f99dc40e7edb8a');
 assert(html.includes('Returning to V15 erases User Banks and preferences'));

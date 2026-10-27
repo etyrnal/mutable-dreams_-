@@ -27,9 +27,12 @@ wait 100
 shot filter.png
 tap EDIT
 expect page 6
+# Neutral starting value avoids depending on factory-preset curation.
+spin K1 -100
+wait 20
 spin K1 10
 wait 20
-expect attack 450
+expect attack 200
 wait 100
 shot envelope.png
 tap EDIT
@@ -76,6 +79,8 @@ wait 20
 expect scale 2
 wait 100
 shot harmony.png
+tap GLO
+expect page 21
 tap GLO
 expect page 5
 wait 100

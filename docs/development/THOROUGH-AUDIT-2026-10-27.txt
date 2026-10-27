@@ -1,0 +1,85 @@
+MUTABLE DREAMS 1.2 — THOROUGH PRIVATE AUDIT, 27 OCTOBER 2026
+FINAL PRIVATE BUILD INSTALLED; NOT A PUBLIC RELEASE
+SHA256: 7d7d03be517f247623bf62754fe32b7439905e8897bec66706678e6fec38b12d
+Identity: FM-1_710010200
+
+CONCRETE FIXES
+1. Short gates were processed too late when a note began inside the first DSP
+   tile. At 220 BPM / 1% gate, envelope state after 64 frames was 0.71749 rather
+   than 0.31998. Release is now sample-accurate inside each voice's envelope.
+2. The initial correction subdivided the complete six-voice rack at every gate.
+   The real FM-1 exposed this: staggered 1–6% Harmonic gates reached 102.57% of
+   the callback budget and produced xruns. That candidate was rejected. Final
+   code keeps four normal 64-frame tiles per 256-frame callback; only the local
+   envelope changes at a gate boundary. A structural regression guards this.
+3. Slow tracks incorrectly multiplied the swing offset by track speed. At 120
+   BPM, speed 2 and maximum swing, a 50% gate lasted 7166 rather than 5512.5
+   frames. Complete long/short pairs now cancel; odd speeds retain one offset.
+4. Recording a held note for roughly sixteen minutes could overflow the integer
+   duration product and record a 1% gate. It now safely saturates at 100%.
+5. Browser saved data is checked for valid object IDs, complete lengths and byte
+   values. Invalid IDs can no longer write to WASM address zero; valid adjacent
+   banks remain readable. Bad data is reported without automatically rewriting
+   localStorage. The suspected repeated-save publication bug was NOT present:
+   the existing write counter is correct and now has an explicit regression.
+6. Background drawing rejects off-tile points before density calculations.
+   Seven reactive/still captures are byte-identical; no visual detail removed.
+   Three historical tests now follow the documented 1.2 GLO page sequence and
+   test knob changes independently of curated factory-preset starting values.
+
+OFFLINE VALIDATION
+15 engines; all 93 Biomes including Blank; all 288 tone presets; 45 extreme
+filter/engine combinations; 30 six-voice quality combinations for 60 simulated
+seconds each; 10,000 boundary commands; 202 grain size/quality configurations
+plus live grain transitions; legacy imports; 32-step recording/generation,
+chords and MIDI; storage interruption/restore simulation; 23 pages and all held
+key guides; actual WASM save/load and restart; editor serialization, imports,
+backup parsing and Density synchronization. ASan/UBSan reports are clean.
+Browser testing is headless/isolated JS and actual WASM, not a visible GUI claim.
+
+FINAL FM-1 VALIDATION
+29 device cases, 31 checks, 732.5 measured seconds of playback.
+No new xruns, overloads, nonfinite samples, dropped commands or USB capture
+errors in those cases. Worst callback: 88.18%
+(Six Harmonic plus grains and full effects with animated editing). Dense patches may intentionally enter ECO; do not claim all
+six voices plus all effects run at FULL. This is scoped evidence, not proof of
+all combinations or unlimited-duration stability.
+Short-gate case: Six short staggered sequence gates model 6 with swing and full effects: 87.54%
+Short-gate case: Six short staggered sequence gates model 3 with swing and full effects: 84.72%
+Short-gate case: Six short staggered sequence gates model 5 with swing and full effects: 87.30%
+
+All 22 saved objects compare byte-for-byte with the fresh backup. The unsaved
+live Biome and appearance preferences are restored; transport is stopped and
+remote controls are released. Only Mutable Dreams and its update-loader port
+were opened. The macOS MIDI name remains Mutable Dreams FM-1.
+
+RESOURCES
+Flash image: 453620 / 581564 bytes; free 127944.
+Static RAM: 72984 / 98304; free 25320.
+Audio pool: 334872 / 344064; free 9192.
+RAM use is unchanged. Flash is not interchangeable with audio working memory.
+
+FURTHER POTENTIAL
+Prioritize more carefully voiced recipes and musical sequences using the
+existing engines. Extra reverb buffers, a new heavy engine, higher internal
+sample rates or second-core audio need their own measured design and tests.
+The current screen is physically 240 x 240: clearer hierarchy, contrast and
+cached animation are realistic improvements; more display pixels are not.
+Remaining long-uptime concern: UI/editor/overwrite timeout comparisons use
+absolute 32-bit millisecond deadlines. Audit their wrap behavior separately;
+this pass does not certify unattended operation across the ~49.7-day rollover.
+
+MEDIA AND RELEASE
+The calm 136-second film remains a private review cut recorded from the earlier
+0b93a61 balance build. It still illustrates the feature set; its music is native
+DSP rendering, not a fresh hardware recording of this final audit build.
+Quiet Arrival belongs to Mutable Dreams; Terrassentanz belongs to Syntherella.
+Published 1.0/1.1 binaries and archives are unchanged. No public site, release,
+video upload or email was changed during this audit.
+
+REMAINING RELEASE CHECKS
+- Owner listening and final visible browser review of this exact private build.
+- Exact-build physical cold-start and Stock V15 install/return roundtrip before release claims.
+- Physical TRS-MIDI cable test remains unavailable; USB and simulated TRS tests do not replace it.
+- Final film/subtitle/website review and explicit release publication step; visible file-page access is blocked by the browser URL policy.
+- Follow-up hardening: absolute 32-bit millisecond UI/editor/overwrite deadlines need wrap-boundary tests before unattended multiweek uptime is claimed.

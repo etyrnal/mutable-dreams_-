@@ -1,61 +1,50 @@
-# Mutable Dreams 1.1
+# Mutable Dreams 1.2
 
-Six voices. Small worlds, endlessly unfolding.
+**Six voices. Small worlds, endlessly unfolding.** An independent, open-source instrument for the M-VAVE FM-1, with a playable browser edition and live USB MIDI editor.
 
-Thank you for the music, questions and community feedback that shaped this update. **Mutable Dreams**, by **Kid Bunka / Christoph Link**, is a free, independent instrument for the **M-VAVE FM-1**, with deep gratitude to **Émilie Gillet and Mutable Instruments**.
+[Play and explore](https://mutable-dreams.sugarypixie10.chatgpt.site/) · [Download 1.2](https://github.com/kidbee85-beep/mutable-dreams/releases/tag/v1.2) · [Install or return to V15](https://mutable-dreams.sugarypixie10.chatgpt.site/Mutable-Dreams-1.2-Install.html) · [Update and recovery guide](https://mutable-dreams.sugarypixie10.chatgpt.site/Recovery-1.2.txt)
 
-[Play & edit in your browser](https://mutable-dreams.sugarypixie10.chatgpt.site/#editor) · [Download 1.1](https://github.com/kidbee85-beep/mutable-dreams/releases/tag/v1.1) · [Watch the update](https://www.youtube.com/watch?v=RCgs8t8fXvM) · [Install / update / return](https://mutable-dreams.sugarypixie10.chatgpt.site/Mutable-Dreams-1.1-Install.html)
+## Shaped by listening
 
-![Native Mutable Dreams 1.1 display](Screen-1.1-Live.png)
+Thank you for the music, encouragement and detailed feedback. Version 1.2 expands the palette and makes personal phrases easier to compose, while refining the sound and the living interface.
 
-## Illustrated English user guide
+- Six freely assignable tracks; 15 engines including new Velvet Keys, Spectral Bloom and Breath Texture.
+- 288 factory tones and 92 musical Biomes plus Blank: 64 additional tones and 16 additional Biomes compared with 1.1, alongside revised existing sounds.
+- Warmer voice contours and more carefully balanced Biomes. A damped Rings strike reduces unintended equal-velocity accents while retaining expressive dynamics.
+- Up to 32 steps per track: notes, rests, velocity, gate and chance; four phrase generators, keyboard/MIDI step entry and monophonic live overdub.
+- Four optional chord journeys across selected tracks.
+- One shared granular cloud with six independent track sends, smoother transitions and optional filtered noise. Shared delay and a more diffuse room.
+- Parameter-responsive landscapes, clearer antialiased lettering, sequence pitch stems and velocity bars. Contextual help on held function buttons.
+- 16 named User Biomes and 64 user sound slots, patch JSON import/export, full .mddb bank backup/restore and a live browser editor.
 
-[Read the 23-page PDF](https://mutable-dreams.sugarypixie10.chatgpt.site/Mutable-Dreams-1.1-User-Guide.pdf) · [Manual on the website](https://mutable-dreams.sugarypixie10.chatgpt.site/#guide)
+The device has a 240 × 240 display. The browser runs the same application/DSP source; its banks are separate from device banks. Selected Mutable Instruments algorithms are combined with original designs: these are not complete ports of every module.
 
-Step-by-step instructions for FM-1 and browser use, real browser screenshots, labelled native display renders, all 19 pages and knob mappings, warmer sound design, rhythms and phrases, named User Biomes, MIDI, live editing, backup/restore and the checked update routes. Includes clickable contents and PDF bookmarks.
+## Update safely
 
-**Browser packaging addendum, 25 October 2026:** the current website and [supplemental standalone browser HTML](https://mutable-dreams.sugarypixie10.chatgpt.site/Mutable-Dreams-1.1-Browser.html) correctly embed the existing 1.1 engine/support scripts. Use these instead of the HTML in the original offline release ZIP, which contained unexpanded template markers. The device firmware, source archive, existing release archives and v1.0 are unchanged. [Details and download fingerprints](https://mutable-dreams.sugarypixie10.chatgpt.site/Documentation-Update.txt).
+Connect only the intended FM-1. On 1.1/1.2, save your work, export a full .mddb backup and separately export any unsaved live patch JSON. Disconnect the live editor before using the installer. The exact 1.2 build completed a Stock V15 roundtrip and data restore; restoration of all banks requires physical SEL confirmation. Returning to V15 erases banks and preferences.
 
-## Warmer worlds, your own Biomes
+For 1.0, use the legacy backup workflow and the previously qualified 1.0 → 1.1 route, then back up in 1.1 before installing 1.2. We do not claim a tested direct path from every third-party firmware. Keep a pre-update backup when downgrading: a 1.2 patch is newer than 1.1.
 
-- Six freely assignable tracks and **12 engines**. New Round Bass, Elements Strike, Mellow Drift and Satin Morph complement selected original Plaits/Rings voices and custom engines.
-- **224 factory tones**, **76 musical Biomes + Blank**, **16 named User Biomes** and **64 User Sound slots**.
-- Global mixer with level and granular/delay/room sends. Shared effects, bassline modes, glide and editable **16-step phrases** with notes/rests and track-level accent/probability.
-- Original Marbles-inspired remembered variation, Tides-inspired cyclic modulation and Warps-inspired ring blending. Selected functions, not complete module ports.
-- Live bidirectional browser editor, JSON live-patch transfer and complete `.mddb` saved-bank backup/restore. The standalone browser instrument runs the same application/DSP source, with separate local storage.
-- USB and TRS MIDI input, external clock, nineteen organic animated pages and held-button help. **USB tested; physical TRS cable test outstanding.** No MPE, MIDI output or live MIDI recording.
+Published 1.0 and 1.1 tags and assets remain available and unchanged. The [1.1 browser](https://mutable-dreams.sugarypixie10.chatgpt.site/Mutable-Dreams-1.1.html) remains available to export older browser banks.
 
-[All update notes](Update-Notes-1.1.txt) · [Quickstart](Quickstart-1.1.txt) · [Measured validation](Validation-1.1.txt)
+## Validation and limits
 
-## Update and keep your work
+Release identity: `FM-1_710010200`  
+Firmware file: `Mutable-Dreams-1.2.0.fwsc` (610,136 bytes)  
+SHA-256: `828891e0f506d6a07ee0c6fa844e54207985c464e0f2d9cbb423e73ae522f7fb`
 
-**Direct update from Mutable Dreams 1.0 is supported and tested on the exact release binary.** Stock V15 is not required between 1.0 and 1.1. Installation from original V15 and return to V15 are documented in the [1.1 recovery guide](Recovery-1.1.txt).
+The exact release binary passed 29 controlled audio/device cases and 15 sequence/storage checks, a V15 roundtrip, byte-identical bank restoration, the visible browser installer and a physical cold start. Measured playback total: 731.7 seconds, with no observed xruns, overloads, nonfinite audio or dropped/capture errors in those cases. The highest observed load was 88.39%. This is scoped evidence, not a guarantee for every patch; automatic admission and FULL/ECO limits remain. USB MIDI is tested; physical TRS-MIDI cable testing remains outstanding. The owner approved the listening results and update film. See [qualification](docs/release-1.2/QUALIFICATION.txt).
 
-Use the backup procedure for your current version. **1.0 does not support the new `.mddb` protocol.** On 1.1, keep `.mddb` for saved data and JSON for unsaved live edits. Returning to V15 erases 1.1 User Banks/preferences. Save while stopped with the internal clock. Full-bank restore requires physical **SEL** confirmation.
+## Browse, build and contribute
 
-The [published v1.0 release](https://github.com/kidbee85-beep/mutable-dreams/releases/tag/v1.0), its tag and original assets remain unchanged. [Original 1.0 documentation](README-1.0.md).
+The complete source tree is directly browsable here in `app/`, `base/`, `web/`, `presets/`, `tools/` and `tests/`. See [BUILDING.md](BUILDING.md), [source provenance](SOURCE-PUBLICATION.md) and `SOURCE-SHA256.txt` in the release source archive. DSP/device sources match the qualified build; public packaging and documentation were updated afterwards without recompiling the device firmware.
 
-## Complete corresponding source
-
-The full **1.1 source tree is directly browsable in this repository**: [application](app/), [sound engine](app/dsp/), [selected upstream modules](app/third_party/), [platform and BSP](base/), [browser sources](web/), [build tools](tools/), [tests](tests/) and [presets](presets/). Clone the repository and follow [BUILDING.md](BUILDING.md); no source ZIP extraction or submodule checkout is needed.
-
-All **807 files** from the published [1.1 source archive](Mutable-Dreams-1.1-Source.zip) are preserved byte for byte, with its original README retained under `docs/release-1.1/`. Run `python3 tools/verify_published_source.py` to verify the match. [Source publication and unchanged release hashes](SOURCE-PUBLICATION.md).
-
-The combined distribution is **GPL-3.0-only** with original MIT/MPL-2.0 and font notices retained. See [licensing](LICENSING-GPL.txt). Python 3.11+, Pillow and Clang/Clang++ are required for host builds; device builds also need the external JieLi pi32v2 compiler and AC79 SDK, while web builds use WASI SDK 34.0. No CI-built badge is claimed.
-
-The existing v1.0/v1.1 tags and release assets are unchanged. Their automatic source downloads retain their historical repository layout. Use the current default branch for the expanded tree, or the named release source ZIP for the original snapshot.
-
-Firmware identity: `FM-1_710010100`  
-Firmware SHA-256: `8e039bb0e9681fbbb0504e9b7d251895958fd88ae97f11ff0342b4aef38143d2`
-
-The [qualification report](Validation-1.1.txt) distinguishes exact-final-file tests, inherited V15/cold-start evidence, owner-confirmed browser checks and untested physical TRS. Dense final playback cases had zero new audio faults, with peaks of 84.67% and 79.60% of the callback budget. A stopped flash restoration produced one separately recorded timing event. Saving is not seamless playback-time writing. No claim covers every possible patch or every third-party firmware route.
-
-## For The Firmware Hub
-
-[FIRMWARE-HUB.json](FIRMWARE-HUB.json) supplies exact firmware/source URLs, hashes, author, categories, screenshots, installer, recovery and tutorial. The current default branch contains the browsable source tree; the named source archive remains available with its original hash. Mutable Dreams 1.1 is listed on [The Firmware Hub](https://thefirmwarehub.com/#fw-mutable).
-
-Native firmware renders: [Live](Screen-1.1-Live.png), [Sound](Screen-1.1-Sound.png), [Mixer](Screen-1.1-Mixer.png), [Grain](Screen-1.1-Grain.png), [Phrase](Screen-1.1-Phrase.png), [Banks](Screen-1.1-Banks.png). These are rendered firmware screens, not camera photographs.
+Native checks: `python3 tools/build_local.py host`, `dsp --sanitize`, `quality --sanitize`, `evolution --sanitize`; see the build guide for toolchain-dependent targets. The second processor core remains disabled. Firmware audio uses 44.1 kHz and 256-frame callbacks; this does not establish end-to-end latency.
 
 ## With gratitude
 
-Émilie Gillet / Mutable Instruments; Charles Vestal / fm1-base; Leo Kuroshita / Felucca; and the open-source contributors. Original component rights and notices are preserved. No JIANT or OberVave implementation was copied. Independent community project, unaffiliated with and not endorsed by Mutable Instruments or M-VAVE.
+Mutable Dreams owes its foundations to **Émilie Gillet and Mutable Instruments** and their generous open-source work. Selected Plaits, Rings and Elements algorithms retain their MIT notices. The fm1-base / felucca-bsp platform retains MPL-2.0 notices. Marbles-inspired remembered variation, Tides-inspired cyclic modulation and Warps-inspired ring blending are original implementations. This independent project is unaffiliated with and not endorsed by Mutable Instruments.
+
+Combined distribution: **GPL-3.0-only**, with original component licences retained. Read [LICENSING-GPL.txt](LICENSING-GPL.txt), [platform credits](base/CREDITS.md) and the component notices before redistributing. No manufacturer firmware or personal User Banks are included in the source bundle.
+
+Created by **Kid Bunka / Christoph Link**. Forks are welcome: please credit Mutable Dreams and its upstream authors, and give your project its own name and visual identity.

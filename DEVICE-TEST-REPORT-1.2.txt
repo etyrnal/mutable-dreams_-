@@ -1,0 +1,39 @@
+MUTABLE DREAMS 1.2 — RELEASE QUALIFICATION
+27 October 2026; owner listening and video approval received.
+
+Identity: FM-1_710010200
+Firmware: Mutable-Dreams-1.2.0.fwsc (610136 bytes)
+SHA-256: 828891e0f506d6a07ee0c6fa844e54207985c464e0f2d9cbb423e73ae522f7fb
+The public filename contains the exact tested bytes. No release-time DSP rebuild.
+
+29 controlled device audio cases / 31 assertions; 731.7 seconds of measured
+playback. No observed xruns, overloads, nonfinite samples, dropped or capture
+errors. Highest observed load: 88.39%, six Harmonic voices plus full effects
+and animated editing. Dense combinations may be admitted in ECO.
+15 sequence and storage checks: keyboard/USB MIDI step entry, recording,
+32 steps, generators, save/load/naming and track isolation.
+Exact build -> manufacturer Stock V15 -> exact build passed.
+22 saved objects restored byte-identically; physical SEL confirmation used.
+Visible browser install/reinstall and a physical five-second power-off passed.
+Browser owner check: warm Biome, sequence editing, controls and slot save/load.
+Native/WASM/editor/transfer/range control, storage power-fault and timer-wrap
+regressions passed. Final owner hearing review: approved for publication.
+
+RESOURCE SNAPSHOT
+Flash 453732 / 581564 bytes; static RAM 73000 / 98304 bytes;
+large allocation pool 334872 / 344064 bytes. These are separate budgets.
+44.1 kHz, 256-frame callbacks. End-to-end latency was not measured.
+Second core DSP remains disabled.
+
+LIMITS
+Evidence covers the listed controlled cases, not every possible user patch.
+USB MIDI tested. TRS MIDI implemented; a physical cable test remains unavailable.
+The previously qualified 1.0 update route uses published 1.1 as an intermediate.
+Arbitrary third-party firmware paths and emergency ROM rescue are not certified.
+V15 recovery erases User Banks/preferences; full .mddb and live JSON backups
+serve different purposes. Granular audio, calibration and MIDI session state
+are excluded. New-format patches must not be forced into older firmware.
+
+Device source is unchanged from the approved build. Release-time changes are
+public documentation, browser presentation, packaging and marketing files.
+Historical reports in docs/development are provenance, not current release status.

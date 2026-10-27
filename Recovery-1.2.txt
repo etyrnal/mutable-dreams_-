@@ -1,0 +1,81 @@
+MUTABLE DREAMS 1.2 — UPDATE AND RECOVERY GUIDE
+Release 1.2, approved 27 October 2026.
+Read DEVICE-TEST-REPORT-1.2.txt for exact-build evidence and remaining limits.
+
+BEFORE YOU START
+Connect only the intended FM-1. Disconnect other FM-1 units, including a unit
+running Syntherella. Close other MIDI editors and stop playback. Keep power
+and USB connected throughout the update and the final identity check.
+
+ON MUTABLE DREAMS 1.1 OR 1.2
+1. Export a live patch JSON for unsaved edits. A bank backup does not implicitly
+   save the live sound. Press SAVE first if you want it as the startup project.
+2. Export the complete .mddb bank backup using the matching version's editor.
+   This contains the saved project, preferences, 16 User Biomes and 64 sounds.
+3. Keep the backup, live JSON and previous firmware together, privately.
+4. Disconnect the editor before opening Mutable-Dreams-1.2-Install.html.
+5. Choose Install. Wait for the successful restart confirmation. The new
+   identity is FM-1_710010200; the MIDI name is Mutable Dreams FM-1. macOS may
+   retain an older label. Do not guess between identically named devices.
+
+EARLIER MUTABLE DREAMS 1.0
+Version 1.0 has one saved personal Biome and no live Web MIDI editor or .mddb
+bank protocol. Stop and SAVE on the device before updating. Use the original
+release's tools/project_backup.py for a separate read-only legacy backup:
+  python3 tools/project_backup.py --port 'X0X FM-1' my-1.0-backup
+The quoted name is the historical port name; select the actual intended unit.
+Keep both live and saved JSON/raw files and the original firmware. Dependencies
+for that legacy tool include mido, python-rtmidi, numpy and sounddevice.
+The previously qualified hardware path is 1.0 -> published 1.1. Use that route
+first, then make the 1.1 .mddb/JSON backup before installing 1.2.
+Legacy imports into 1.2 are regression-tested; that is not a claim that a fresh
+direct 1.0 -> this exact 1.2 hardware roundtrip has been performed.
+
+INSTALL FROM ORIGINAL STOCK V15
+Open Mutable-Dreams-1.2-Install.html in a browser with Web MIDI SysEx support
+(Chrome or Edge). Grant MIDI access, choose Install and wait until completion.
+Stock V15 starts with identity FM-1_015 and normally the MIDI port FM-1.
+Only the intended device should be connected. Arbitrary third-party firmware
+update paths have not been qualified.
+
+RETURN TO ORIGINAL V15
+Returning to stock can erase User Banks and preferences. A firmware file does
+not include your personal banks. Back them up before returning to stock.
+Manufacturer reference used for the verified roundtrip:
+  https://yms-file-store.oss-cn-hongkong.aliyuncs.com/software/firmware/FM-1.fwsc
+Required size: 699956 bytes. Required identity: FM-1_015.
+Required SHA-256:
+  db1642b2b6fa5c2cccb11ffd13878068bb28601678d3644049f99dc40e7edb8a
+The manufacturer may replace that URL's contents. Check the hash; do not rely
+on the filename. The browser installer rejects a different stock file.
+Choose the verified V15 file in the installer and use its return-to-stock
+button. Wait for the confirmed FM-1_015 restart.
+
+RESTORE YOUR MUTABLE DREAMS DATA
+1. Reinstall the matching Mutable Dreams package and wait for restart.
+2. Stop transport, select internal clock, then connect its live editor.
+3. Restore your .mddb. This replaces all saved objects and clears slots that
+   were empty in the backup. Read the displayed scope before proceeding.
+4. At RESTORE FROM USB?, press SEL physically on the FM-1. HOME or timeout
+   cancels. The browser deliberately cannot supply this confirmation.
+5. Check the restored banks and preferences. Import a separately exported
+   unsaved live JSON last. SAVE explicitly if you want to keep that live edit.
+
+SOURCE-BUNDLE COMMAND-LINE ALTERNATIVES
+Python 3 with mido and python-rtmidi; only the intended FM-1 connected:
+  python3 base/tools/fm1_install.py --info
+  python3 base/tools/fm1_install.py --yes Mutable-Dreams-1.2.0.fwsc
+  python3 tools/dreams_backup.py backup my-banks.mddb --port 'Mutable Dreams FM-1'
+  python3 tools/dreams_backup.py info my-banks.mddb
+  python3 tools/dreams_backup.py restore my-banks.mddb --port 'Mutable Dreams FM-1'
+For the exact verified manufacturer package only:
+  python3 base/tools/fm1_install.py --force --yes FM-1-V15.fwsc
+Do not use --force for Mutable Dreams.
+
+LIMITS
+Backups exclude calibration, transient granular audio and session MIDI state;
+they are not full-flash dumps. If a restore connection is lost after SEL, read
+the device before retrying: the commit may have completed. Do not intentionally
+interrupt an update. This test does not claim emergency ROM-rescue coverage.
+Version 1.2 patches are newer than 1.1: keep a pre-update 1.1 backup if you want
+to downgrade. Never force a newer-format bank image into older firmware.
