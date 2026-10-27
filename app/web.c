@@ -8,7 +8,7 @@
 #define EXPORT static
 #endif
 EXPORT void dream_command(int c,int t,int v){dream_dismiss_intro();if(c==111){bank_slot=clamp(v,0,bank_kind?63:15);bank_armed=-1;}else if(c==112){bank_kind=clamp(v,0,1);bank_slot=clamp(bank_slot,0,bank_kind?63:15);bank_armed=-1;}else if(c==115)bank_char=clamp(v,0,22);else if(c==116){bank_name[bank_char]=clamp(v,0,126);bank_name[23]=0;}else if(c==113)bank_action(0);else if(c==114)bank_action(1);else if(c==103)dream_prefs.motion=clamp(v,0,1);else if(c==104)dream_prefs.boot_sound=clamp(v,0,1);else if(c==105)dream_intro();else if(c==106){cpu_peak=0;plat_audio_peak_reset();}else dream_cmd(c,t,v);}
-EXPORT void dream_page(int p){dream_dismiss_intro();dream_ui.page=clamp(p,0,18);dream_ui.help=-1;dream_ui.dirty=1;}
+EXPORT void dream_page(int p){dream_dismiss_intro();dream_ui.page=clamp(p,0,22);dream_ui.help=-1;dream_ui.dirty=1;}
 EXPORT void dream_track(int t){dream_ui.track=clamp(t,0,5);dream_ui.dirty=1;}
 EXPORT int dream_value(int c,int t){const md_patch *p=md_state();const md_track *v=&p->track[clamp(t,0,5)];switch(c){case 107:return dream_ui.octave;case 108:return dream_ui.help;case 109:return md_status()->last_note[clamp(t,0,5)];case 110:return md_status()->events[clamp(t,0,5)];case 100:return dream_ui.page;case 101:return dream_ui.track;case 102:return p->edited_mask;case 103:return dream_prefs.motion;case 104:return dream_prefs.boot_sound;case MD_SCENE:return p->biome_id;case MD_TONE_PRESET:return p->tone_preset[clamp(t,0,5)];case MD_MODEL:return v->model;case MD_MUTE:return v->mute;case MD_MACRO:return p->macro[clamp(t,0,3)];case MD_PLAY:return md_playing();case MD_TEMPO:return p->tempo;case MD_LOCK:return p->locked;case MD_FREEZE:return p->freeze;case MD_QUALITY:return p->quality;default:return 0;}}
 
@@ -17,6 +17,10 @@ EXPORT int dream_knob(int page,int track,int knob){
  const md_patch *p=md_state();const md_track *t=&p->track[clamp(track,0,5)];int k=clamp(knob,0,3);
  const md_extension *e=&p->ext[clamp(track,0,5)];
  int v[4]={0,0,0,0};switch(page){
+ case SEQUENCE:{const md_sequence *q=&p->sequence[clamp(track,0,5)];v[0]=q->enabled;v[1]=q->edit;v[2]=q->steps[q->edit].note?q->steps[q->edit].note:23;v[3]=q->length;break;}
+ case STEP_DETAIL:{const md_sequence *q=&p->sequence[clamp(track,0,5)];const md_step *s=&q->steps[q->edit];v[0]=s->velocity;v[1]=s->gate;v[2]=s->chance;v[3]=q->generator;break;}
+ case PROGRESSION:v[0]=p->chord_pattern;v[1]=p->chord_bars;v[2]=(p->chord_tracks>>clamp(track,0,5))&1;v[3]=p->root;break;
+ case CLOUD:v[0]=p->grain_noise;v[1]=p->macro[3];v[2]=t->send;v[3]=p->freeze;break;
  case MIDI:v[0]=md_clock_source();v[1]=md_midi_quantize();break;
  case BANKS:v[0]=bank_slot;v[1]=bank_kind;break;
  case MIXER:v[0]=t->level;v[1]=t->send;v[2]=e->delay_send;v[3]=e->reverb_send;break;
@@ -44,6 +48,10 @@ EXPORT int dream_raw_knob(int page,int track,int knob){
  const md_patch *p=md_state();const md_track *t=&p->track[clamp(track,0,5)];int k=clamp(knob,0,3);
  const md_extension *e=&p->ext[clamp(track,0,5)];
  int v[4]={0,0,0,0};switch(page){
+ case SEQUENCE:{const md_sequence *q=&p->sequence[clamp(track,0,5)];v[0]=q->enabled;v[1]=q->edit;v[2]=q->steps[q->edit].note?q->steps[q->edit].note:23;v[3]=q->length;break;}
+ case STEP_DETAIL:{const md_sequence *q=&p->sequence[clamp(track,0,5)];const md_step *s=&q->steps[q->edit];v[0]=s->velocity;v[1]=s->gate;v[2]=s->chance;v[3]=q->generator;break;}
+ case PROGRESSION:v[0]=p->chord_pattern;v[1]=p->chord_bars;v[2]=(p->chord_tracks>>clamp(track,0,5))&1;v[3]=p->root;break;
+ case CLOUD:v[0]=p->grain_noise;v[1]=p->macro[3];v[2]=t->send;v[3]=p->freeze;break;
  case MIDI:v[0]=md_clock_source();v[1]=md_midi_quantize();break;
  case BANKS:v[0]=bank_slot;v[1]=bank_kind;break;
  case MIXER:v[0]=t->level;v[1]=t->send;v[2]=e->delay_send;v[3]=e->reverb_send;break;
