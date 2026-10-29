@@ -28,9 +28,9 @@ FONTSETS = {
     # the device still draws the same 4-bit coverage glyphs, with no font engine.
     "dreams": [("T", "BarlowSemiCondensed-SemiBold.ttf", 10, 1, False, 32, 95),
                ("XS", "BarlowSemiCondensed-Bold.ttf", 12, 1, False, 32, 126),
-               ("H", "BarlowSemiCondensed-Medium.ttf", 13, 1, False, 32, 126),
+               ("H", "BarlowSemiCondensed-SemiBold.ttf", 14, 1, False, 32, 126),
                ("S", "Nunito[wght].ttf@Weight=650", 14, 1, False, 32, 126),
-               ("B", "Nunito[wght].ttf@Weight=750", 14, 1, False, 32, 126),
+               ("B", "Nunito[wght].ttf@Weight=800", 16, 1, False, 32, 126),
                ("M", "Nunito[wght].ttf@Weight=700", 22, 1, False, 32, 95),
                ("L", "Nunito[wght].ttf@Weight=750", 30, 1, False, 32, 95)],
     "terminus": [("T", "ter-u12n.bdf", 12, 1, True, 32, 95),
@@ -178,6 +178,7 @@ def render(ttf, px, scale, pixel, first, last):
         if FONTSET == "dreams" and not pixel:
             # All roles: build-time supersampling, unchanged 4-bit glyph format
             # and advance widths. No larger framebuffer or runtime font engine.
+            native = img.copy()  # Keep native-size hinting for small upright stems.
             hi_font = ImageFont.truetype(str(font_path(name)), px * 4)
             if var:
                 hi_font.set_variation_by_axes([float(axes.get(n.lower()[:4], axes.get(n, 0)) or a["default"])
@@ -185,6 +186,8 @@ def render(ttf, px, scale, pixel, first, last):
             hi = Image.new("L", (bw * 4, (top + h) * 4), 0)
             ImageDraw.Draw(hi).text((PAD * 4, 0), ch, font=hi_font, fill=255, features=feats)
             img = hi.crop((0, top * 4, bw * 4, (top + h) * 4)).resize((bw, h), Image.Resampling.LANCZOS)
+            if px <= 14:
+                img = Image.blend(native, img, .35)
             # Modest coverage compensation keeps small stems bright on RGB565.
             img = img.point([round(255 * (v / 255) ** .88) for v in range(256)])
         px_ = [(15 if v >= 128 else 0) if pixel else min(15, (v + 8) // 17) for v in img.tobytes()]
