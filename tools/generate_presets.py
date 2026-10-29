@@ -271,13 +271,57 @@ for b in biomes:
    tr['resonance']=0
   ix=b['tones'][i]
   if ix>=0 and not all(tr[k]==tones[ix][k] for k in tone_fields):b['tones'][i]=-1
-assert len({tuple(t[k] for k in tone_fields) for t in tones[224:]})==64
-assert len(tones)==288 and len(biomes)==93
-catalog=dict(version='1.2 development',families=family_names+['Your own world'],family_short=family_short+['BLANK'],tone_fields=tone_fields,tones=tones,biomes=biomes)
+# 1.3 additions preserve the complete published 1.2 atlas and identifiers.
+import copy
+warm_names=[
+ 'Honey Felt','Cedar Hush','Low Cotton','Ember Reed','Wool Horizon','Soft Copper','Apricot Air','Quiet Linen',
+ 'Velour Sub','Root Pillow','Slow Amber','Rounded Reed','Candle Bass','Cedar Low','Warm Current II','Deep Linen',
+ 'Worn Ivory','Evening Felt','Paper Rhodes','Muted Pearl','Cocoa Keys','Amber Tines','Sleepy Marimba','Soft Porcelain',
+ 'Silt Choir','Dawn Wool','Warm Solstice','Willow Air','Vapor Silk','Slow Pollen','Linen Cloud','Quiet Orchard']
+for j,name in enumerate(warm_names):
+ group=j//8;v=j%8;model=[10,8,12,[7,11,13,14,7,11,13,14][v]][group]
+ base=next(t for t in tones if t['model']==model);x=copy.deepcopy(base)
+ x.update(id=len(tones),name=name,tone=240+v*44,harm=[180,350,500,650,250,450,700,900][v],shape=160+v*65,attack=[380,10,40,650][group]+v*15,decay=[860,650,560,920][group],cutoff=[590,520,610,620][group]+v*13,resonance=0,filter=1 if group!=1 else 2,breathe=230+v*40 if group in [0,3] else 60)
+ if model==7:x['harm']=[0,300,600,900][v%4]
+ if model in [11,13]:x['tone']=650+v*30
+ tones.append(x)
+# Additional warm interpretations of the four existing physical/FM/VA engines.
+recipes=[
+ (3,'Felt Sine Pearl',100,234,500,150,700,640),(3,'Low Reed FM',145,477,500,420,920,610),(3,'Soft Celesta',185,649,500,30,560,670),(3,'Muted Marimba',120,234,500,15,360,620),
+ (4,'Wooden Reed',230,500,140,180,720,620),(4,'Rounded Strings',310,622,280,550,950,660),(4,'Hollow Warmth',190,500,90,460,880,590),(4,'Cotton Brass',350,744,350,250,820,650),
+ (5,'Paper Vessel',180,265,250,0,480,590),(5,'Cedar Strings',240,280,480,0,570,620),(5,'Clay Kalimba',210,310,370,0,430,650),(5,'Low Ceramic',145,270,180,0,600,570),
+ (9,'Felt Chamber',210,260,180,0,560,580),(9,'Soft Plectrum',270,285,440,0,620,620),(9,'Paper Particles',180,300,780,0,450,600),(9,'Wooden Resonance',240,320,220,0,710,640)]
+for model,name,tone,harm,shape,attack,decay,cutoff in recipes:
+ x=copy.deepcopy(next(t for t in tones if t['model']==model));x.update(id=len(tones),name=name,tone=tone,harm=harm,shape=shape,attack=attack,decay=decay,cutoff=cutoff,filter=1,resonance=0,breathe=160);tones.append(x)
+new_names=['Honey Dusk','Linen Horizon','Cedar Sleep','Amber Stillness','Quiet Orchard','Cotton Current','Willow Shelter','Silt Meditation','Dust Afterglow','Paper Lanterns','Static Meadow','Crackle Estuary','Velour Transit','Dust In Sunlight','Wooden Atrium','Tape Constellation']
+for j,name in enumerate(new_names):
+ b=copy.deepcopy(biomes[77+j%8]);b.update(id=len(biomes),name=name,tempo=[62,70,54,68,76,60,72,48,82,94,66,78,86,96,72,64][j],root=[0,5,2,9,7,3,10,0,5,2,9,7,3,10,0,5][j],scale=1 if j%3 else 3,seed=0x130001+j*317,macro=[500,150+j%4*65,420,510 if j<8 else 390],grain_pitch=0,feedback=330,grain_size=640,grain_pos=400,swing=100 if j>=8 else 0)
+ b['family']=0 if j<8 else 9
+ for i,tr in enumerate(b['tracks']):
+  # Every world has a distinct ensemble, including the new warm FM/VA/wood voices.
+  ensembles=[
+   [296,288,304,313,329,322], [300,318,325,307,314,291],
+   [303,324,329,315,334,292], [297,321,310,317,326,295],
+   [299,313,330,306,319,289], [302,327,308,320,316,293],
+   [298,314,332,305,325,294], [301,319,328,312,288,323],
+   [296,306,319,312,288,304], [298,329,289,313,305,324],
+   [300,314,313,319,307,292], [297,325,333,316,309,320],
+   [302,320,308,317,293,326], [299,327,311,318,330,295],
+   [301,328,334,312,289,305], [303,315,322,318,291,329]]
+  ix=ensembles[j][i];x=tones[ix];tr.update({k:x[k] for k in tone_fields})
+  tr.update(level=[420,340,230,290,190,210][i],send=[180,480,280,490,500,360][i],note=[36,48,60,55,67,43][i],hits=[2,1,2,1,1,1][i],length=[16,19,16,23,29,17][i],rotate=0 if i==0 else (i*3+j)%16,prob=1000 if i<2 else 850,speed=[4,6,4,5,7,8][i],ratchet=1,accent=80,pan=[500,340,650,580,200,780][i])
+  if tr['model'] in [3,5,9]:tr.update(level=min(tr['level'],230 if i else 340),hits=1+(j+i)%2,speed=3+(j+i)%3,send=340+(j%3)*80)
+  if tr['model'] in [7,10,11,13,14]:tr.update(attack=max(tr['attack'],480+(j%4)*100),decay=860+(i%3)*50)
+  if j>=8 and i<3:tr.update(speed=[2,2+(j%3),3+(j%2)][i],hits=[3,2,1+(j%2)][i],length=[16,16,12+(j%3)*4][i],rotate=0 if i==0 else (j+i*2)%8,level=[430,310,280][i])
+  b['tones'][i]=ix if all(tr[k]==tones[ix][k] for k in tone_fields) else -1
+ biomes.append(b)
+assert len({tuple(t[k] for k in tone_fields) for t in tones[288:]})==48
+assert len(tones)==336 and len(biomes)==109
+catalog=dict(version='1.3 private development',families=family_names+['Your own world','Lo-Fi & Warmth'],family_short=family_short+['BLANK','LO-FI'],tone_fields=tone_fields,tones=tones,biomes=biomes)
 (R/'presets/catalog.json').write_text(json.dumps(catalog,indent=2,ensure_ascii=False)+'\n')
 lines=['/* Generated by tools/generate_presets.py; MIT. Flash-resident factory atlas. */','struct TonePreset { const char *name; int32_t '+','.join(tone_fields)+'; };','static const TonePreset tone_bank[MD_TONE_PRESETS]={']
 for t in tones:lines.append('{'+json.dumps(t['name'])+','+','.join(str(t[k]) for k in tone_fields)+'},')
-lines+=['};','struct BiomePreset { const char *name; unsigned family; md_patch patch; };','static const char *biome_families[]={'+','.join(json.dumps(x) for x in catalog['family_short'])+'};','static const BiomePreset biome_bank[MD_BIOMES]={']
+lines+=['};','struct FactoryPatch {\n uint32_t magic,version,seed; int32_t macro[4],tempo,locked,freeze,grain_size,grain_pos,feedback,quality;\n md_track track[MD_TRACKS];\n int32_t root,scale,transpose,swing,grain_pitch,reverse,duck_source,duck_amount,duck_release;\n int32_t biome_id,tone_preset[6]; uint32_t edited_mask;\n};\nstatic_assert(sizeof(FactoryPatch)==offsetof(md_patch,ext),"factory prefix layout");\nstruct BiomePreset { const char *name; unsigned family; FactoryPatch patch; };','static const char *biome_families[]={'+','.join(json.dumps(x) for x in catalog['family_short'])+'};','static const BiomePreset biome_bank[MD_BIOMES]={']
 for b in biomes:
  head=[0x4D445231,4,b['seed']];tail=[b[k] for k in ['tempo','locked','freeze','grain_size','grain_pos','feedback','quality']];gl=[b[k] for k in ['root','scale','transpose','swing','grain_pitch','reverse','duck_source','duck_amount','duck_release']]
  p=','.join(map(str,head))+',{'+','.join(map(str,b['macro']))+'},'+','.join(map(str,tail))+',{'+','.join('{'+','.join(str(t[k]) for k in fields)+'}' for t in b['tracks'])+'},'+','.join(map(str,gl))+','+str(b['id'])+',{'+','.join(map(str,b['tones']))+'},0'

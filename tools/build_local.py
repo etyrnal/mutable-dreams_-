@@ -21,10 +21,10 @@ if mode=='web':flags+=['-DPLAT_WEB','-D_POSIX_C_SOURCE=200809L','-fvisibility=hi
 objs=[]
 for src in conf['o2']:
  o=out/(src.replace('/','_').replace('.','_')+'.o');subprocess.run([cxx,*flags,*conf.get('o2_cflags',[]),f'-I{A / "compat"}','-std=c++11','-fno-exceptions','-fno-rtti','-c',str(A/src),'-o',str(o)],check=True);objs.append(str(o))
-if mode in ('dsp','quality','next','render','mellow','evolution','palette'):
+if mode in ('dsp','quality','next','render','mellow','evolution','palette','kits','motion'):
  target=out/('audio-quality-tests' if mode=='quality' else 'dsp-tests')
- test={'palette':'render_palette.cpp','evolution':'evolution.cpp','mellow':'render_mellow.cpp','quality':'audio_quality_tests.cpp','next':'next_features.cpp','render':'render_development.cpp'}.get(mode,'dsp_tests.cpp')
- if mode in ('next','render','mellow','evolution'):target=out/(mode+'-tests')
+ test={'motion':'motion.cpp','kits':'kits.cpp','palette':'render_palette.cpp','evolution':'evolution.cpp','mellow':'render_mellow.cpp','quality':'audio_quality_tests.cpp','next':'next_features.cpp','render':'render_development.cpp'}.get(mode,'dsp_tests.cpp')
+ if mode in ('next','render','mellow','evolution','kits','motion'):target=out/(mode+'-tests')
  if mode=='palette':target=out/'render-palette'
  linked=[o for o in objs if mode!='quality' or not o.endswith('dsp_dreams_cpp.o')]
  subprocess.run([cxx,*flags,*conf.get('o2_cflags',[]),*([f'-I{A / "compat"}'] if mode=='quality' else []),'-std=c++11',str(R/'tests'/test),*linked,'-o',str(target)],check=True)
