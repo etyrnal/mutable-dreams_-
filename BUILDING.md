@@ -1,10 +1,9 @@
-# Build Mutable Dreams 1.2 from this repository
+# Build Mutable Dreams 1.3
 
-The source is directly available in this repository. Clone it and build from the root; no source ZIP extraction or Git submodule download is needed. The application, selected Mutable Instruments code, fm1-base platform and felucca-bsp are vendored with their original notices.
+Use the browsable repository source tree or the versioned source bundle. No Git submodule download is needed. The application, selected Mutable Instruments code, fm1-base platform and felucca-bsp are vendored with their original notices.
 
 ```sh
-git clone https://github.com/kidbee85-beep/mutable-dreams.git
-cd mutable-dreams
+cd /path/to/Mutable-Dreams-1.3-Source
 ```
 
 ## Source map
@@ -20,6 +19,7 @@ cd mutable-dreams
 | `tools/` | Build/package tools, backup/editor utilities and test runners |
 | `tests/` | Native DSP/application and browser protocol tests |
 | `docs/release-1.2/` | Released build qualification and update/recovery evidence |
+| `docs/release-1.3/` | Exact-build qualification, update notes and recovery information |
 
 ## Native build and checks (no FM-1 required)
 
@@ -34,6 +34,8 @@ python -m pip install Pillow
 export SDKROOT="$(xcrun --show-sdk-path)"
 
 python tools/verify_published_source.py
+python tools/generate_lofi.py
+python tools/generate_presets.py
 python tools/build_local.py host --sanitize
 python tools/test_transfer.py
 python tools/build_local.py dsp --sanitize
@@ -44,12 +46,16 @@ Skip the `SDKROOT` line on Linux. The host executable is `app/build/san/mutable-
 
 If macOS reports `tapi error: malformed file` / `unknown architecture` while linking SDK libraries, your selected SDK and linker are incompatible. Select an installed compatible SDK through `SDKROOT`; the source-publication check used `MacOSX15.4.sdk`. Do not change firmware code to work around a host SDK mismatch.
 
-Further targets are `quality` (audio quality), `next` (earlier feature regressions) and `evolution` (1.2 sequence/chord/voice regressions). For example:
+Run `python tools/build_local.py kits --sanitize` and `app/build/san/kits-tests` for all five sample banks, the change guard, v7 migration and the four-track rack. Further targets are `quality` (audio quality), `next` (earlier feature regressions) and `evolution` (1.2 sequence/chord/voice regressions). For example:
 
 ```sh
 python tools/build_local.py next --sanitize
 app/build/san/next-tests
+python tools/build_local.py motion --sanitize
+app/build/san/motion-tests
 ```
+
+The `motion` target covers v8-to-v9 migration, independent LFO routing, neutral depth, sequence traversal, recording and motion persistence. Browser tests use Node.js: `tests/web_engine.mjs`, `tests/web_storage.mjs`, `tests/device_editor.mjs` and `tests/range_controls.mjs`. The latter two take a packaged HTML filename as an argument. They do not substitute for a visible browser or physical controller test.
 
 Generated build files stay in `app/build/`. The snapshot's `.gitignore` is preserved unchanged; keep your local `.venv/` out of commits, for example through your local `.git/info/exclude`.
 
@@ -91,8 +97,8 @@ For Apple Silicon, read [the tested build environment repair](docs/development/B
 
 ## Version and provenance
 
-The v1.2 release source archive contains the browsable tree and a SHA-256 manifest. Run `python3 tools/verify_published_source.py` to check these files. The device/DSP sources are identical to the qualified build; release documentation and browser packaging were updated afterwards. Toolchain differences can change binary outputs, so file identity alone is not a bit-for-bit build reproducibility claim.
+The v1.3 source archive contains the full tree and a SHA-256 manifest. Run `python3 tools/verify_published_source.py` to check these files. The device/DSP sources are identical to the qualified build; release documentation and browser packaging were updated afterwards. Toolchain differences can change binary outputs, so file identity alone is not a bit-for-bit build reproducibility claim.
 
 Original v1.0 and v1.1 tags/assets remain unchanged. Their automatic GitHub source downloads describe their historical repository commits. Use their named source ZIPs for the original frozen snapshots.
 
-See [qualification](docs/release-1.2/QUALIFICATION.txt), [licensing](LICENSING-GPL.txt), platform credits and component/font notices.
+See the [1.3 qualification](docs/release-1.3/DEVICE-TEST-REPORT-1.3.txt), historical [1.2 qualification](docs/release-1.2/QUALIFICATION.txt), [licensing](LICENSING-GPL.txt), platform credits and component/font notices.

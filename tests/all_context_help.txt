@@ -3197,6 +3197,8 @@ tap FX
 tap FX
 tap FX
 tap FX
+tap FX
+tap FX
 expect page 22
 press FX
 wait 900

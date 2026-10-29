@@ -27,7 +27,9 @@ static int bank_read_tones(void){
 static int bank_action(int save){
  if(dream_store_hold){app_say("USB BACKUP IN PROGRESS","");return 4;}
  if(md_playing()||md_clock_source()){app_say("STOP / USE INTERNAL CLOCK","");return 4;}
+ if(bank_kind&&md_state()->kit.enabled&&dream_ui.track==3){app_say("SAVE KITS AS USER BIOMES","");return 6;}
  int obj=bank_object(),exists=plat_store_size(obj)>0;
+ if(!save&&!bank_kind&&exists&&!bank_allow_load&&md_unsaved()){bank_pending=bank_slot;return 8;}
  if(bank_kind){int r=bank_read_tones();if(r<0){app_say("BANK FORMAT NOT SUPPORTED","");return 6;}exists=r&&(tone_bank_io.used&(1u<<(bank_slot%16)));}
  if(save==1&&exists&&(bank_armed!=obj*64+bank_slot||(uint32_t)(plat_ms()-bank_arm_start)>3000)){bank_armed=obj*64+bank_slot;bank_arm_start=plat_ms();app_say("SAVE AGAIN: OVERWRITE SLOT","");return 5;}
  bank_armed=-1;
@@ -36,6 +38,7 @@ static int bank_action(int save){
   int failed;
   if(bank_kind){memcpy(tone_bank_io.tone[bank_slot%16].name,bank_name,24);tone_bank_io.tone[bank_slot%16].track=bank_patch_io.track[dream_ui.track];tone_bank_io.tone[bank_slot%16].ext=bank_patch_io.ext[dream_ui.track];tone_bank_io.used|=1u<<(bank_slot%16);failed=plat_store_save(obj,&tone_bank_io,sizeof tone_bank_io);}
   else {user_biome_io.magic=0x4d445542;memcpy(user_biome_io.name,bank_name,24);user_biome_io.patch=bank_patch_io;failed=plat_store_save(obj,&user_biome_io,sizeof user_biome_io);}
+  if(!failed&&!bank_kind){uint32_t f=plat_lock();md_mark_saved();plat_unlock(f);}
   app_say(failed?"BANK SAVE FAILED":"USER SLOT SAVED","");return failed?7:0;
  }else{
   if(!exists){app_say("EMPTY USER SLOT","");return 3;}
@@ -46,6 +49,6 @@ static int bank_action(int save){
    e->glide=t->ext.glide;e->tides=t->ext.tides;e->tides_rate=t->ext.tides_rate;e->warps=t->ext.warps;
    bank_patch_io.tone_preset[dream_ui.track]=-1;bank_patch_io.edited_mask|=1u|(2u<<dream_ui.track);
   }else {if(!bank_read_biome(obj)){app_say("INVALID USER SLOT","");return 6;}memcpy(bank_name,user_biome_io.name,24);bank_name[23]=0;}
-  int ok=dream_install(&bank_patch_io,sizeof bank_patch_io);app_say(ok?"USER SLOT LOADED":"INVALID USER SLOT","");return ok?0:6;
+  int ok=bank_kind?dream_install_edit(&bank_patch_io,sizeof bank_patch_io):dream_install(&bank_patch_io,sizeof bank_patch_io);app_say(ok?"USER SLOT LOADED":"INVALID USER SLOT","");return ok?0:6;
  }
 }

@@ -1,0 +1,53 @@
+MUTABLE DREAMS 1.3 — DUST, WARMTH AND MOVEMENT
+
+Thank you for the music and the detailed feedback. This update brings more
+contrasting sounds, gentler textures and safer exploration to the M-VAVE FM-1.
+
+NEW SOUNDS
+Five original Lo-Fi kits contain 40 drum and texture samples. Use one kit
+with three synth tracks, or keep six freely assignable synth tracks. Pad
+pitch, level, soft filter, tail and granular send are editable. Record or
+generate kit steps. Forty-eight additional sounds and sixteen Biomes bring
+the totals to 336 tone presets and 108 musical Biomes plus Blank.
+
+MORE MOVEMENT
+Two independent LFOs per synth track can slowly move filter, colour, pan,
+grain send, effect sends, Warps blend or a soft amplitude swell. Each has
+four curves and its own cycle. Six-synth mode offers twelve routed LFOs;
+kit mode offers six. They are saved with complete Biomes, and are not synced
+to MIDI clock. The existing Breathe modulation remains available.
+
+PHRASES AND HARMONY
+Five sequence directions, offset and gentle velocity feel join four new
+generators. There are eight chord journeys, up to sixteen bars per chord,
+and Nearby root moves for smaller transposition jumps. Generating replaces
+the selected phrase; ENV undoes. Keyboard step entry, live recording and
+chord progressions existed in 1.2 and are extended here.
+
+SAFER AND EASIER TO READ
+An accidental Biome change now asks what to do with unsaved edits. The 240 ×
+240 display gains larger type, calm page palettes, translucent controls and
+responsive little organisms. Held function buttons still show contextual help.
+GLO → LOOK / STARTUP → K4 controls the unselected button LEDs: Off, Dim or
+Soft. The setting saves with preferences. The existing hardware offers two
+dim levels; this feature does not add a new LED PWM audio workload.
+
+INSTALLATION
+Stock V15 and Stock V16 were verified as starting points using the exact
+USB update protocol. Official M-UPGRADE installed manufacturer V16 from V15,
+but rejected the custom 1.3 package with “File format error”. Use the
+included browser or Python installer for Mutable Dreams. Save your User
+Banks as .mddb and unsaved live patch as JSON first. A full bank restore
+requires physical SEL confirmation. Do not assume a direct route from every
+third-party firmware. The public 1.0, 1.1 and 1.2 releases remain unchanged.
+
+LIMITS
+The five kits are fixed original assets; arbitrary WAV import and Bluetooth
+MIDI are not in 1.3. USB MIDI is tested. Physical TRS-MIDI cable testing is
+still outstanding. Automatic FULL/ECO admission remains in place for dense
+patches. See DEVICE-TEST-REPORT-1.3.txt for measured scope.
+
+With gratitude to Émilie Gillet, Mutable Instruments and the community.
+Mutable Dreams is independent and unaffiliated with Mutable Instruments.
+
+Release SHA-256: d9400aa360048a8422028f1e005f6a434cd96f9c8db2f0fbef35cda39ebab1d6

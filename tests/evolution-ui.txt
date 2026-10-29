@@ -66,6 +66,8 @@ tap FX
 tap FX
 tap FX
 tap FX
+tap FX
+tap FX
 expect page 22
 spin K1 8
 wait 100
@@ -77,6 +79,10 @@ release FX
 tap HOME
 tap HOME
 spin PRESET 77
+wait 100
+expect pending_biome 77
+expect biome 0
+tap SEL
 wait 100
 expect biome 77
 tap PLAY

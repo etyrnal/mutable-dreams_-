@@ -10,7 +10,7 @@ static unsigned editor_unpack(const uint8_t *p,unsigned n,uint8_t *out,unsigned 
 }
 static int editor_reply(const uint8_t *p,unsigned n,uint8_t *raw,uint32_t *len){
  unsigned c=p[3];
- if(c==7&&n==5){uint32_t w[]={1,7,sizeof(md_patch),22,16,64,MD_TONE_PRESETS,MD_BIOMES};memcpy(raw,w,sizeof w);*len=sizeof w;return 0;}
+ if(c==7&&n==5){uint32_t w[]={1,9,sizeof(md_patch),29,16,64,MD_TONE_PRESETS,MD_BIOMES};memcpy(raw,w,sizeof w);*len=sizeof w;return 0;}
  if(c==8&&n==5){
   uint32_t f=plat_lock();memcpy(md_stored_snapshot,md_state(),sizeof(md_patch));plat_unlock(f);
   md_stored_size=sizeof(md_patch);md_stored_generation=(md_stored_generation+1)&127;
@@ -29,12 +29,12 @@ static int editor_reply(const uint8_t *p,unsigned n,uint8_t *raw,uint32_t *len){
   for(int j=0;j<4;j++)w[i++]=dream_knob(pg,t,j);
   for(int j=0;j<4;j++)w[i++]=dream_raw_knob(pg,t,j);
   for(int j=0;j<4;j++)w[i++]=s->macro[j];
-  plat_unlock(f);memcpy(raw,w,i*4);memcpy(raw+i*4,bank_name,24);*len=i*4+24;return 0;
+  plat_unlock(f);memcpy(raw,w,i*4);memcpy(raw+i*4,bank_name,24);int32_t extra[4]={md_pending_biome(),s->kit.enabled,bank_pending,dream_prefs.button_glow};memcpy(raw+i*4+24,extra,16);*len=i*4+40;return 0;
  }
  if(c==10&&n==9){
   int cmd=p[5],t=p[6],v=(p[7]|p[8]<<7)-8192;
   if(cmd==100){dream_page(v);return 0;}if(cmd==101){dream_track(v);return 0;}
-  if(cmd==103||cmd==104||cmd==105||cmd==106||cmd==111||cmd==112){dream_command(cmd,t,v);return 0;}
+  if(cmd==103||cmd==104||cmd==105||cmd==106||cmd==111||cmd==112||cmd==124){dream_command(cmd,t,v);return 0;}
   return 1;
  }
  if(c==11){

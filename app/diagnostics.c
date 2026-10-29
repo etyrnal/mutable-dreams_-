@@ -27,7 +27,7 @@ int app_sysex(const uint8_t *p,uint32_t n){
   words[46]=s->element_modes;words[47]=ui_frames;words[48]=ui_frame_peak_ms;plat_unlock(f);len=49*4;memcpy(raw,words,len);
  }else if(p[3]==2&&n>=9&&n<=69&&(n-5)%4==0){
   uint32_t count=(n-5)/4,f=plat_lock();
-  for(unsigned k=5;k<n;k+=4)if(p[k]>=MD_COMMAND_COUNT)tx[6]=1;
+  for(unsigned k=5;k<n;k+=4)if(p[k]>=MD_COMMAND_COUNT||(p[k]>=99&&p[k]<120))tx[6]=1;
   if(md_command_space()<count)tx[6]=2;
   if(!tx[6])for(unsigned k=5;k<n;k+=4)md_command(p[k],p[k+1],(int)(p[k+2]|p[k+3]<<7)-8192);
   plat_unlock(f);

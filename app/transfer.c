@@ -11,20 +11,22 @@ static int dream_name_valid(const char *s){
 int app_backup_playing(void){return md_playing()||md_clock_source();}
 void app_backup_flush(void){} /* Export saved objects; never overwrite a live edit implicitly. */
 void app_backup_hold(int on){dream_store_hold=on;bank_armed=-1;}
-static int dream_install(const void *data,unsigned n){
+static int dream_install_mode(const void *data,unsigned n,int edit){
  if(dream_store_hold||md_playing()||md_clock_source()||md_command_space()!=64)return 0;
  uint32_t f=plat_lock();dream_reloading=1;plat_unlock(f);
  /* Keep the audio callback punctual while reinitialising voices and effect memory. */
- int ok=md_import(data,n);
+ int ok=edit?md_import_edit(data,n):md_import(data,n);
  f=plat_lock();dream_reloading=0;plat_unlock(f);
  return ok;
 }
+static int dream_install(const void *data,unsigned n){return dream_install_mode(data,n,0);}
+static int dream_install_edit(const void *data,unsigned n){return dream_install_mode(data,n,1);}
 int app_backup_validate(unsigned obj,const void *data,unsigned n){
  if(obj==OBJ_PANEL||obj>=OBJ_NOBJ)return 0;
  if(!n)return 1; /* An empty record intentionally clears this saved object. */
  if(obj==OBJ_PREFS){
-  uint32_t p[3];if(n!=sizeof p)return 0;memcpy(p,data,sizeof p);
-  return p[0]==0x4d445046&&p[1]<=1&&p[2]<=1;
+  uint32_t p[4]={0};if(n!=12&&n!=sizeof p)return 0;memcpy(p,data,n);
+  return p[0]==0x4d445046&&p[1]<=1&&p[2]<=1&&(n==12||p[3]<=2);
  }
  if(obj==OBJ_PATCH){
   return md_decode(&bank_patch_io,data,n);

@@ -36,7 +36,7 @@ struct Voice {
  float colour_tone,colour_harm,colour_shape;
  float choir_phase[3],choir_frequency[3];
  float expression_smooth,pan_smooth,midi_gate,mellow_phase,mellow_drift;
- float strike_gate,target_note,sub_phase,tide_phase,warp_phase,warp_smooth,delay_send_smooth,reverb_send_smooth;
+ float strike_gate,target_note,sub_phase,tide_phase,tide2_phase,warp_phase,warp_smooth,delay_send_smooth,reverb_send_smooth;
  float mem[112],env,amp,note,excite,fade,velocity,cut_smooth,res_smooth,breath_phase,lpg,eco_previous,eco_next;
  int model,trigger,attacking,active,eco_phase;
 };
@@ -60,8 +60,13 @@ static float diffuse_room(float x){
  return x;
 }
 static void reset_fx(){fx_active=false;memset(room_diffusion,0,sizeof room_diffusion);memset(diffusion_head,0,sizeof diffusion_head);memset(echo,0,sizeof echo);memset(room,0,sizeof room);memset(room_head,0,sizeof room_head);memset(room_lp,0,sizeof room_lp);echo_head=0;echo_lp=fx_smooth=fx_highpass_in=fx_highpass_out=0;delay_smooth=8820;}
+static void motion_defaults(md_patch &p){p.version=9;memset(&p.motion,0,sizeof p.motion);}
+static void kit_defaults(md_patch &p){
+ p.version=8;memset(&p.kit,0,sizeof p.kit);p.kit.length=16;p.kit.gates[0]=0x01010101u;p.kit.gates[1]=0x10101010u;p.kit.gates[2]=0x44444444u;
+ for(int j=0;j<8;j++)p.kit.pads[j]={0,700,650,200,850};motion_defaults(p);
+}
 static void next_defaults(md_patch &p){
- p.version=7;p.grain_noise=0;p.chord_pattern=0;p.chord_bars=2;p.chord_tracks=63;
+ kit_defaults(p);p.grain_noise=0;p.chord_pattern=0;p.chord_bars=2;p.chord_tracks=63;
  memset(p.sequence,0,sizeof p.sequence);
  for(int i=0;i<6;i++){md_sequence &q=p.sequence[i];q.length=16;
   for(int j=0;j<MD_STEPS;j++){int off=p.ext[i].notes[j%16];q.steps[j]={(uint8_t)(off<0||!p.ext[i].bass_mode?0:(int64_t)p.track[i].note+off>96?96:(int64_t)p.track[i].note+off<24?24:p.track[i].note+off),80,100,85};}}
@@ -73,6 +78,19 @@ struct Repeat { float left,spacing,note,velocity; unsigned remaining; };
 static Repeat repeats[6];
 static Grain grains[4];
 static md_patch patch,previous;
+static uint32_t saved_hash[2];static int pending_biome=-1;
+// Canonical fingerprint ignores navigation cursors and the descriptive edit flag.
+// Compute only on a change request or successful save, never in the sample loop.
+static void patch_hash(uint32_t out[2]){
+ const uint8_t *b=(const uint8_t*)&patch;uint32_t a=2166136261u,c=5381;
+ for(unsigned j=0;j<sizeof patch;j++){
+  if(j>=offsetof(md_patch,edited_mask)&&j<offsetof(md_patch,ext))continue;
+  bool cursor=false;for(unsigned i=0;i<6;i++)if((j>=offsetof(md_patch,ext)+i*sizeof(md_extension)+offsetof(md_extension,edit_step)&&j<offsetof(md_patch,ext)+i*sizeof(md_extension)+offsetof(md_extension,edit_step)+4)||j==offsetof(md_patch,sequence)+i*sizeof(md_sequence)+offsetof(md_sequence,edit))cursor=true;
+  if(cursor||j==offsetof(md_patch,kit)+offsetof(md_kit,pad)||j==offsetof(md_patch,kit)+offsetof(md_kit,step))continue;
+  a=(a^b[j])*16777619u;c=(c*33u)^b[j];
+ }out[0]=a;out[1]=c;
+}
+
 static md_stats stats;
 static unsigned writehead,grainclock,tape_valid;
 static float feedback_lp,dcx[2],dcy[2],smooth[4],grain_noise_smooth,grain_noise_lp;
@@ -125,14 +143,15 @@ static void reset_voice(unsigned i) {
  repeats[i].remaining=0;
 }
 #include "preset_bank.inc"
+#include "lofi_kit.inc"
 static void clear_audio() {
- reset_fx();tape_valid=0;writehead=grainclock=0;
+ kit_reset();reset_fx();tape_valid=0;writehead=grainclock=0;
  memset(grains,0,sizeof grains);memset(repeats,0,sizeof repeats);
  memset(dcx,0,sizeof dcx);memset(dcy,0,sizeof dcy);feedback_lp=duckenv=grain_noise_smooth=grain_noise_lp=0;memset(seq_gate,0,sizeof seq_gate);record_mode=0;record_note=record_step=-1;
 }
 static void scene(int id) {
  id=bound(id,0,MD_BIOMES-1);
- patch=biome_bank[id].patch;extension_defaults(patch);
+ memset(&patch,0,sizeof patch);memcpy(&patch,&biome_bank[id].patch,sizeof(FactoryPatch));extension_defaults(patch);
  if(id!=MD_BLANK_BIOME){
   unsigned family=biome_bank[id].family;bool ambient=family==0||family==1||id>=65;
   patch.fx_level=ambient?380:family==2||family==5||family==7?260:140;
@@ -159,8 +178,12 @@ static void scene(int id) {
    for(int k=0;k<16;k++){int off=phrases[(id-77)%4][k];q.steps[k]={(uint8_t)(off<0?0:bound(md_quantize(patch.track[i].note+off,patch.root,patch.scale),24,96)),(uint8_t)(k==0?78:62+(k*3+id)%14),100,(uint8_t)(72+(k*7)%25)};}break;
   }
  }
+ if(id>=93){
+  if(id>=101){patch.kit.enabled=1;static const int kit_banks[8]={0,1,2,3,4,0,3,4};patch.kit.bank=kit_banks[id-101];kit_pattern(patch.kit,(id-101)%4);patch.track[3].level=700;patch.track[3].send=280;patch.ext[3].reverb_send=150;patch.track[3].speed=1;}
+  patch.chord_pattern=1+(id%3);patch.chord_bars=4;patch.chord_tracks=7;
+ }
  clear_audio();for(int i=0;i<6;i++){reset_voice(i);}for(int j=0;j<4;j++)smooth[j]=unit(patch.macro[j]);
- previous=patch;step=0;untilstep=0;seqrng=patch.seed;
+ previous=patch;step=0;untilstep=0;seqrng=patch.seed;pending_biome=-1;md_mark_saved();
 }
 static void tone_preset(int track,int id) {
  id=bound(id,0,MD_TONE_PRESETS-1);const TonePreset &a=tone_bank[id];md_track &t=patch.track[track];
@@ -172,23 +195,46 @@ static int32_t *track_field(md_track &t,int c) {
 switch(c){case MD_MODEL:return &t.model;case MD_TONE:return &t.tone;case MD_HARM:return &t.harm;case MD_DECAY:return &t.decay;case MD_LEVEL:return &t.level;case MD_SEND:return &t.send;case MD_HITS:return &t.hits;case MD_LENGTH:return &t.length;case MD_ROTATE:return &t.rotate;case MD_PROB:return &t.prob;case MD_NOTE:return &t.note;case MD_PAN:return &t.pan;case MD_MUTE:return &t.mute;default:return &t.speed;}
 }
 static void fire(unsigned i,float note,float velocity) {
+ if(patch.kit.enabled){if(i>=4)return;if(i==3){kit_fire(kit_note((int)note),velocity);stats.events[3]++;stats.last_note[3]=(int)note;return;}}
  seq_gate[i]=0;Voice &v=voices[i];v.trigger=1;v.midi_gate=0;v.target_note=note;if(!patch.ext[i].glide||!v.active)v.note=note;v.velocity=velocity;v.active=1;
  stats.events[i]++;stats.last_note[i]=(int)note;
  if((int)i==patch.duck_source&&!patch.track[i].mute)duckenv=1;
 }
 // Progressions use scale degrees, not arbitrary chromatic transposition.
+static const uint8_t journey_degrees[9][8]={
+ {0,0,0,0,0,0,0,0},{0,3,0,4},{0,5,3,4},{0,6,3,0},{0,2,5,3},
+ {0,0,5,5,3,1,3,0}, // Dusk: leave room before gently returning home.
+ {0,4,5,2,3,0,1,4}, // Lanterns: a longer answering phrase.
+ {0,1,3,4,5,4,3,1}, // Tidal: rise and return through neighbouring roots.
+ {0,0,3,0,5,3,4,0}  // Still Water: a strong recurring tonic.
+};
+// Control-rate curves reuse lookup tables; no new audio-rate oscillator or buffer.
+static float tidal_wave(float phase,unsigned shape){
+ if(shape==0)return 1-4*fabsf(phase-.5f);
+ if(shape<3){float w=plaits::Sine(phase+.75f);if(shape==2){float u=(w+1)*.5f;w=2*u*u-1;}return w;}
+ float u=phase<.25f?phase*4:(1-phase)*(4.f/3.f);return 2*u*u*(3-2*u)-1;
+}
+static unsigned sequence_position(unsigned i,unsigned local){
+ const md_sequence &q=patch.sequence[i];unsigned n=q.length,at=local%n;
+ switch(patch.motion.direction[i]){
+ case 1:at=n-1-at;break;
+ case 2:if(n>1){unsigned k=local%(2*n-2);at=k<n?k:2*n-2-k;}break;
+ case 3:at=(at+local/n)%n;break;
+ case 4:{unsigned r=patch.seed^((i+1)*0x9e3779b9u)^((at+1)*0x85ebca6bu);at=random_word(r)%n;break;}
+ }
+ return (at+patch.motion.shift[i])%n;
+}
 static int chord_offset(){
- static const int degrees[5][4]={{0,0,0,0},{0,3,0,4},{0,5,3,4},{0,6,3,0},{0,2,5,3}};
  static const int intervals[8][7]={{0,2,4,5,7,9,11},{0,2,3,5,7,8,10},{0,2,4,5,7,9,11},{0,2,3,5,7,9,10},{0,2,3,5,7,8,10},{0,2,4,5,7,9,11},{0,2,4,6,8,10,12},{0,1,3,5,7,8,10}};
  // Pentatonic melodies retain functional fourth/fifth roots from their parent
  // major/minor scale. Quantization still constrains each resulting voice.
- int d=degrees[patch.chord_pattern][(step/(16*patch.chord_bars))%4];
- return intervals[patch.scale][d];
+ int d=journey_degrees[patch.chord_pattern][(step/(16*patch.chord_bars))%(patch.chord_pattern>4?8:4)];
+ int offset=intervals[patch.scale][d];return patch.motion.compact&&offset>6?offset-12:offset;
 }
 static void capture_note(unsigned i,int note,float velocity){
  if(!record_mode||i!=(unsigned)record_track||(record_mode==2&&!playing))return;
  md_sequence &q=patch.sequence[i];q.enabled=1;
- unsigned at=record_mode==1?q.edit:((step?step-1:0)/patch.track[i].speed)%q.length;
+ unsigned at=record_mode==1?q.edit:sequence_position(i,(step?step-1:0)/patch.track[i].speed);
  q.steps[at]={(uint8_t)bound(note,24,96),(uint8_t)bound((int)(velocity*100+.5f),1,100),100,85};
  record_note=note;record_step=at;record_start=stats.frames;patch.edited_mask|=1;
  if(record_mode==1)q.edit=(at+1)%q.length;
@@ -204,18 +250,28 @@ static void capture_off(unsigned i,int note){
  }
 }
 static void generate_sequence(unsigned i,int kind){
- md_sequence &q=patch.sequence[i];previous=patch;q.generator=bound(kind,0,3);q.enabled=1;
+ md_sequence &q=patch.sequence[i];previous=patch;q.generator=bound(kind,0,7);q.enabled=1;
  unsigned r=patch.seed^(i+1)*0x9e3779b9u;static const int melody[]={0,7,12,3,5,7,10,12};
  for(int k=0;k<MD_STEPS;k++){unsigned roll=random_word(r);bool on=k%4==0||(q.generator==1?k%2==0:q.generator==2?k%3!=1:q.generator==3?roll%100<45:false);
   int offset=q.generator==0?(k%8?7:0):melody[q.generator==1?(k/2)%8:(roll>>12)%8];
   int note=md_quantize(patch.track[i].note+offset,patch.root,patch.scale);
-  q.steps[k]={(uint8_t)(on?note:0),(uint8_t)(k%4?65+roll%16:85),(uint8_t)(q.generator==3?80:100),(uint8_t)(q.generator==2?50:90)};
+  if(q.generator>=4){
+   static const int petals[8]={0,7,2,9,5,7,2,0},tide[8]={0,2,5,7,9,7,5,2},answer[8]={0,7,12,14,12,7,5,2};
+   int off=0;
+   if(q.generator==4){on=k%8==0||k%8==3||k%8==6;off=petals[(k/3)%8];}
+   else if(q.generator==5){on=k%3!=2;off=tide[(k/2)%8];}
+   else if(q.generator==6){on=md_hit(k,5,q.length,0);off=petals[(roll>>12)%8];}
+   else {on=k%8<3||k%8==5;off=answer[k%8];}
+   note=md_quantize(patch.track[i].note+off,patch.root,patch.scale);
+   q.steps[k]={(uint8_t)(on?note:0),(uint8_t)(k%8?58+roll%17:78),(uint8_t)(q.generator==6?88:100),(uint8_t)(q.generator==7?78:96)};
+  }else q.steps[k]={(uint8_t)(on?note:0),(uint8_t)(k%4?65+roll%16:85),(uint8_t)(q.generator==3?80:100),(uint8_t)(q.generator==2?50:90)};
  }
 }
 static void apply(Command e) {
  int i=bound(e.t,0,5),v=e.v;md_track &t=patch.track[i];
+ if(patch.kit.enabled&&i==3&&(e.c==MD_MODEL||e.c==MD_TONE_PRESET))return;
  // Playback, preview notes and emergency silence do not change a preset.
- if(e.c!=MD_SCENE&&e.c!=MD_RETURN&&e.c!=MD_PLAY&&e.c!=MD_TRIGGER&&e.c!=MD_PANIC&&e.c!=MD_MUTATE&&e.c!=MD_RECORD&&e.c!=MD_NOTE_OFF)patch.edited_mask|=1u;
+ if(e.c!=MD_SCENE_CONFIRM&&e.c!=MD_KIT_TRIGGER&&e.c!=MD_KIT_PAD&&e.c!=MD_KIT_STEP&&e.c!=MD_SEQ_STEP&&e.c!=MD_BASS_STEP&&e.c!=MD_SCENE&&e.c!=MD_RETURN&&e.c!=MD_PLAY&&e.c!=MD_TRIGGER&&e.c!=MD_PANIC&&e.c!=MD_MUTATE&&e.c!=MD_RECORD&&e.c!=MD_NOTE_OFF)patch.edited_mask|=1u;
  if(e.c==MD_MODEL||e.c==MD_TONE||e.c==MD_HARM||e.c==MD_DECAY||e.c==MD_ATTACK||(e.c>=MD_SHAPE&&e.c<=MD_BREATHE))patch.edited_mask|=2u<<i;
  if(e.c<=MD_SPEED) {
   int32_t *p=track_field(t,e.c);
@@ -234,9 +290,34 @@ static void apply(Command e) {
  case MD_LOCK:patch.locked=!!v;break;
  case MD_MUTATE: previous=patch;patch.edited_mask|=1u;patch.seed=random_word(seqrng)|1;for(unsigned j=0;j<6;j++)patch.track[j].rotate=random_word(seqrng)%patch.track[j].length;break;
  case MD_RETURN:record_mode=0;record_note=record_step=-1;patch=previous;seqrng=patch.seed;for(unsigned j=0;j<6;j++){repeats[j].remaining=0;if(voices[j].model!=patch.track[j].model)reset_voice(j);}break;
- case MD_SCENE:scene(v);break;
+ case MD_SCENE:v=bound(v,0,MD_BIOMES-1);if(md_unsaved())pending_biome=v;else scene(v);break;
+ case MD_SCENE_CONFIRM:if(v==1&&pending_biome>=0)scene(pending_biome);else pending_biome=-1;break;
+ case MD_KIT_MODE:if(patch.kit.enabled!=!!v){patch.kit.enabled=!!v;kit_reset();for(int j=3;j<6;j++)reset_voice(j);record_mode=0;}break;
+ case MD_KIT_BANK:patch.kit.bank=bound(v,0,4);break; // Existing sample voices keep their source and decay naturally.
+ case MD_KIT_PAD:patch.kit.pad=bound(v,0,7);break;
+ case MD_KIT_STEP:patch.kit.step=bound(v,0,patch.kit.length-1);break;
+ case MD_KIT_GATE:{uint32_t bit=1u<<patch.kit.step;if(v)patch.kit.gates[patch.kit.pad]|=bit;else patch.kit.gates[patch.kit.pad]&=~bit;break;}
+ case MD_KIT_TUNE:patch.kit.pads[patch.kit.pad].tune=bound(v,-12,12);break;
+ case MD_KIT_LEVEL:patch.kit.pads[patch.kit.pad].level=bound(v,0,1000);break;
+ case MD_KIT_CUTOFF:patch.kit.pads[patch.kit.pad].cutoff=bound(v,0,1000);break;
+ case MD_KIT_SEND:patch.kit.pads[patch.kit.pad].send=bound(v,0,1000);break;
+ case MD_KIT_DECAY:patch.kit.pads[patch.kit.pad].decay=bound(v,0,1000);break;
+ case MD_KIT_HISS:patch.kit.hiss=bound(v,0,100);break;
+ case MD_KIT_GENERATE:previous=patch;kit_pattern(patch.kit,bound(v,0,3));break;
+ case MD_KIT_LENGTH:patch.kit.length=bound(v,1,32);patch.kit.step=bound(patch.kit.step,0,patch.kit.length-1);break;
+ case MD_KIT_TRIGGER:if(patch.kit.enabled){unsigned pad=bound(v,0,7);kit_fire(pad,.8f);stats.events[3]++;if(record_mode&&record_track==3){unsigned at=record_mode==1?patch.kit.step:((step?step-1:0)/patch.track[3].speed)%patch.kit.length;patch.kit.gates[pad]|=1u<<at;if(record_mode==1)patch.kit.step=(at+1)%patch.kit.length;}}break;
  case MD_TONE_PRESET:tone_preset(i,v);break;
  case MD_GRAIN_NOISE:patch.grain_noise=bound(v,0,1000);break;
+ case MD_LFO2_TARGET:patch.motion.target2[i]=bound(v,0,6);break;
+ case MD_LFO2_SHAPE:patch.motion.wave2[i]=bound(v,0,3);break;
+ case MD_LFO2_DEPTH:patch.motion.depth2[i]=bound(v,0,1000);break;
+ case MD_LFO2_RATE:patch.motion.rate2[i]=bound(v,0,1000);break;
+ case MD_SEQ_DIRECTION:patch.motion.direction[i]=bound(v,0,4);break;
+ case MD_SEQ_FEEL:patch.motion.feel[i]=bound(v,0,100);break;
+ case MD_SEQ_SHIFT:patch.motion.shift[i]=bound(v,0,31);break;
+ case MD_LFO_TARGET:patch.motion.target[i]=bound(v,0,6);break;
+ case MD_LFO_SHAPE:patch.motion.wave[i]=bound(v,0,3);break;
+ case MD_CHORD_COMPACT:patch.motion.compact=!!v;break;
  case MD_SEQ_ENABLE:patch.sequence[i].enabled=!!v;break;
  case MD_SEQ_STEP:patch.sequence[i].edit=bound(v,0,patch.sequence[i].length-1);break;
  case MD_SEQ_NOTE:patch.sequence[i].steps[patch.sequence[i].edit].note=v<24?0:bound(v,24,96);break;
@@ -246,8 +327,8 @@ static void apply(Command e) {
  case MD_SEQ_LENGTH:patch.sequence[i].length=bound(v,1,32);patch.sequence[i].edit%=patch.sequence[i].length;break;
  case MD_SEQ_GENERATE:generate_sequence(i,v);break;
  case MD_RECORD:if(!record_mode&&v)previous=patch;record_mode=bound(v,0,2);record_track=i;record_note=record_step=-1;break;
- case MD_CHORD_PATTERN:patch.chord_pattern=bound(v,0,4);break;
- case MD_CHORD_BARS:patch.chord_bars=bound(v,1,8);break;
+ case MD_CHORD_PATTERN:patch.chord_pattern=bound(v,0,8);break;
+ case MD_CHORD_BARS:patch.chord_bars=bound(v,1,16);break;
  case MD_CHORD_FOLLOW:if(v)patch.chord_tracks|=1<<i;else patch.chord_tracks&=~(1<<i);break;
  case MD_CHORD_TRACKS:patch.chord_tracks=bound(v,0,63);break;
  case MD_FREEZE:patch.freeze=!!v;break;
@@ -255,8 +336,8 @@ static void apply(Command e) {
  case MD_GRAIN_POS:patch.grain_pos=bound(v,0,1000);break;
  case MD_FEEDBACK:patch.feedback=bound(v,0,850);break;
  case MD_QUALITY:if(patch.quality!=bound(v,0,1)){patch.quality=bound(v,0,1);for(unsigned j=0;j<6;j++){voices[j].eco_phase=0;voices[j].eco_previous=voices[j].eco_next=0;voices[j].fade=0;}}break;
- case MD_TRIGGER:capture_note(i,bound(v,24,96),.8f);fire(i,(float)(t.model>=MD_FM?md_quantize(v+patch.transpose,patch.root,patch.scale):bound(v,24,96)),.8f);break;
- case MD_NOTE_OFF:capture_off(i,bound(v,24,96));break;
+ case MD_TRIGGER:if(patch.kit.enabled&&i==3){kit_fire(kit_note(v),.8f);stats.events[3]++;break;}capture_note(i,bound(v,24,96),.8f);fire(i,(float)(t.model>=MD_FM?md_quantize(v+patch.transpose,patch.root,patch.scale):bound(v,24,96)),.8f);break;
+ case MD_NOTE_OFF:if(patch.kit.enabled&&i>=3)break;capture_off(i,bound(v,24,96));break;
  case MD_ATTACK:t.attack=bound(v,0,1000);break;
  case MD_RATCHET:t.ratchet=bound(v,1,4);break;
  case MD_SHAPE:t.shape=bound(v,0,1000);break;
@@ -298,16 +379,20 @@ static void tick() {
  float duration=MD_RATE*60.0f/(patch.tempo*4.0f)*(1+(step%2?-1:1)*unit(patch.swing)*.5f);
  if((step%32)==0) {if(patch.locked)seqrng=patch.seed;else patch.seed=random_word(seqrng)|1;}
  static const int degree[7]={0,2,3,5,7,10,12};
- for(unsigned i=0;i<6;i++) {
-  const md_track &t=patch.track[i];if(step%(unsigned)t.speed)continue;
+ for(unsigned i=0;i<(patch.kit.enabled?4u:6u);i++) {
+  const md_track &t=patch.track[i];
+  if(patch.kit.enabled&&i==3){if(step%(unsigned)t.speed==0&&!t.mute){unsigned at=(step/t.speed)%patch.kit.length;for(unsigned pad=0;pad<8;pad++)if((patch.kit.gates[pad]>>at)&1u){if(random_word(seqrng)%1000<(unsigned)t.prob){kit_fire(pad,at%4?.67f:.8f);stats.events[3]++;}}}continue;}
+if(step%(unsigned)t.speed)continue;
   unsigned local=step/t.speed;
   int hits=bound(t.hits+(patch.macro[0]-500)*t.length/1500,0,t.length);
   unsigned roll=random_word(seqrng);
   const md_sequence &sq=patch.sequence[i];
-  if(sq.enabled){const md_step &st=sq.steps[local%sq.length];
+  if(sq.enabled){const md_step &st=sq.steps[sequence_position(i,local)];
    if(st.note&&st.velocity&&!t.mute&&roll%100<st.chance&&(roll/100)%1000<(unsigned)t.prob){
     int note=st.note;if(t.model>=MD_FM){if(patch.chord_tracks&(1u<<i))note+=chord_offset();note=md_quantize(note+patch.transpose,patch.root,patch.scale);}
-    fire(i,note,st.velocity*.01f);if(md_has_envelope(t.model)){
+    unsigned human=patch.seed^((i+1)*0x27d4eb2du)^((local%sq.length+1)*0x85ebca6bu);
+    float feel=1+((int)(random_word(human)%25)-12)*patch.motion.feel[i]*.0001f;
+    fire(i,note,fminf(1.f,st.velocity*.01f*feel));if(md_has_envelope(t.model)){
      // Swing alternates every tick. A slow track spans whole pairs, with only
      // one extra long/short tick for odd speeds; do not multiply the swing.
      float span=MD_RATE*60.0f/(patch.tempo*4.0f)*(t.speed+(t.speed%2?(step%2?-1:1)*unit(patch.swing)*.5f:0));
@@ -342,15 +427,15 @@ static void quantum(float *lr,unsigned n) {
  // immediately before a dense six-voice attack. Existing audible tails also count.
  if(patch.quality){static const unsigned weight[MD_MODELS]={8,13,8,18,10,27,17,11,8,30,10,12,10,12,10};unsigned cost=12;
   // Provisional additional weights, pending physical-device measurement.
-  if(fx_active||patch.fx_level)cost+=10;
-  for(unsigned j=0;j<6;j++)if(!patch.track[j].mute&&patch.ext[j].warps)cost+=2;
-  for(unsigned i=0;i<6;i++)if(voices[i].active||!patch.track[i].mute)cost+=weight[patch.track[i].model];
+  if(fx_active||patch.fx_level)cost+=10;if(patch.kit.enabled)cost+=12;
+  for(unsigned j=0;j<(patch.kit.enabled?3u:6u);j++)if(!patch.track[j].mute&&patch.ext[j].warps)cost+=2;
+  for(unsigned i=0;i<(patch.kit.enabled?3u:6u);i++)if(voices[i].active||!patch.track[i].mute)cost+=weight[patch.track[i].model];
   if(cost>85){patch.quality=0;stats.quality_reductions++;for(unsigned i=0;i<6;i++){voices[i].eco_phase=0;voices[i].eco_previous=voices[i].eco_next=0;voices[i].fade=0;}}
  }
 
  // A shared mode budget also applies in ECO. All six tracks remain audible.
  unsigned element_count=0;
- for(unsigned j=0;j<6;j++)if(patch.track[j].model==MD_ELEMENTS&&(voices[j].active||!patch.track[j].mute))element_count++;
+ for(unsigned j=0;j<(patch.kit.enabled?3u:6u);j++)if(patch.track[j].model==MD_ELEMENTS&&(voices[j].active||!patch.track[j].mute))element_count++;
  unsigned element_modes=element_count>1?16/element_count:(patch.quality?16:8);
  element_modes=element_modes<2?2:element_modes;stats.element_modes=element_modes;
  const float block_ratio=n>32?n/32.0f:1.0f;
@@ -365,7 +450,7 @@ static void quantum(float *lr,unsigned n) {
  for(unsigned k=0;k<n;k++){duck[k]=1-duckenv*unit(patch.duck_amount)*.9f;duckenv*=duckdec;}
  float grainrate=stmlib::SemitonesToRatio((float)patch.grain_pitch)*(patch.reverse?-1:1);
  float fb=unit(patch.feedback);
- for(unsigned i=0;i<6;i++) {
+ for(unsigned i=0;i<(patch.kit.enabled?3u:6u);i++) {
   md_track &t=patch.track[i];Voice &v=voices[i];bool trig=v.trigger;v.trigger=0;
   if(trig) {v.active=1;v.attacking=md_has_envelope(t.model)||t.attack>0; if(!v.attacking)v.env=1;v.excite=1;v.lpg=1;}
   /* Only FM/VA have an observable final envelope. Never cut resonator/drum tails. */
@@ -373,10 +458,17 @@ static void quantum(float *lr,unsigned n) {
   const md_extension &e=patch.ext[i];
   v.note+=(v.target_note-v.note)*(e.glide?n/(float)(n+MD_RATE*.35f*unit(e.glide)):1.0f);
   v.tide_phase+=n/(MD_RATE*(.5f+unit(e.tides_rate)*19.5f));if(v.tide_phase>=1)v.tide_phase-=1;
-  float tidal=(1.0f-4.0f*fabsf(v.tide_phase-.5f))*unit(e.tides);
+  const unsigned route=patch.motion.target[i],route2=patch.motion.target2[i];
+  float wave=tidal_wave(v.tide_phase,e.tides?patch.motion.wave[i]:0);
+  float tidal=wave*unit(e.tides),tide_gain=1-unit(e.tides)*.5f+tidal*.5f;
+  float depth2=unit(patch.motion.depth2[i]),tidal2=0,tide_gain2=1;
+  if(depth2){v.tide2_phase+=n/(MD_RATE*(.5f+unit(patch.motion.rate2[i])*19.5f));if(v.tide2_phase>=1)v.tide2_phase-=1;
+   tidal2=tidal_wave(v.tide2_phase,patch.motion.wave2[i])*depth2;tide_gain2=1-depth2*.5f+tidal2*.5f;
+  }
   v.breath_phase+=n/(MD_RATE*(7.0f+i*2.3f));if(v.breath_phase>=1)v.breath_phase-=1;
   const float breathing=unit(t.breathe)*plaits::Sine(v.breath_phase);
   float tone=fminf(.98f,fmaxf(t.model==MD_HARMONIC?0.0f:.02f,unit(t.tone)+(smooth[2]-.5f)*.65f));
+  if(route==1||route2==1)tone=fminf(.98f,fmaxf(0.f,tone+((route==1?tidal:0)+(route2==1?tidal2:0))*.2f));
   float harm=unit(t.harm),shape=unit(t.shape);
   if(t.model==MD_CHOIR||t.model==MD_BASS||t.model==MD_MELLOW||t.model==MD_VELVET_KEYS||t.model==MD_BREATH){
    // These original voices have no internal Mutable parameter interpolator.
@@ -527,7 +619,7 @@ static void quantum(float *lr,unsigned n) {
   if(eco){memcpy(tmp,out,engine_n*sizeof(float));unsigned j=0;
    for(unsigned k=0;k<n;k++){if(!v.eco_phase){v.eco_previous=v.eco_next;v.eco_next=tmp[j++];out[k]=(v.eco_previous+v.eco_next)*.5f;}else out[k]=v.eco_next;v.eco_phase^=1;}
   }
-  float cutoff=unit(t.cutoff)+tidal*.2f+breathing*.13f+(smooth[2]-.5f)*.18f;
+  float cutoff=unit(t.cutoff)+((route==0?tidal:0)+(route2==0?tidal2:0))*.2f+breathing*.13f+(smooth[2]-.5f)*.18f;
   if(t.filter==3)cutoff-=.55f*(1-v.lpg);
   cutoff=fminf(1.0f,fmaxf(0.0f,cutoff));
   v.cut_smooth+=(cutoff-v.cut_smooth)*slew40;v.res_smooth+=(unit(t.resonance)-v.res_smooth)*slew40;
@@ -538,9 +630,13 @@ static void quantum(float *lr,unsigned n) {
   // Fold velocity into the existing sample-rate gain slew. A changed accent
   // must not introduce an instantaneous gain discontinuity on a sounding tail.
   float target=t.mute?0:unit(t.level)*.24f*(melodic?v.velocity:1)*(1-.045f*fabsf(breathing));
-  float pan=fminf(1.0f,fmaxf(0.0f,unit(t.pan)+.035f*breathing)),dec=1.0f-1.0f/(MD_RATE*(.06f+unit(t.decay)*unit(t.decay)*16.0f));
+  if(route==6)target*=1-unit(e.tides)*.35f+tidal*.35f;
+  if(route2==6)target*=1-depth2*.35f+tidal2*.35f;
+  float pan=fminf(1.0f,fmaxf(0.0f,unit(t.pan)+.035f*breathing+((route==2?tidal:0)+(route2==2?tidal2:0))*.35f)),dec=1.0f-1.0f/(MD_RATE*(.06f+unit(t.decay)*unit(t.decay)*16.0f));
   float attackstep=1.0f/(1+MD_RATE*(.002f+8.0f*unit(t.attack)*unit(t.attack))),sendlevel=unit(t.send);
-  const float warp_target=unit(e.warps),ds=unit(e.delay_send),rs=unit(e.reverb_send),expr=expression[i];
+  if(route==3)sendlevel*=tide_gain;
+  if(route2==3)sendlevel*=tide_gain2;
+  const float warp_target=unit(e.warps)*(route==5?tide_gain:1.f)*(route2==5?tide_gain2:1.f),ds=unit(e.delay_send)*(route==4?tide_gain:1.f)*(route2==4?tide_gain2:1.f),rs=unit(e.reverb_send)*(route==4?tide_gain:1.f)*(route2==4?tide_gain2:1.f),expr=expression[i];
   float track_peak=stats.track_peak[i];
   // Release inside this voice's envelope loop. Splitting the entire rack at
   // each track's gate deadline made six short staggered gates overload the
@@ -578,6 +674,7 @@ static void quantum(float *lr,unsigned n) {
   stats.track_peak[i]=track_peak;
   if(melodic&&!v.attacking&&v.env<.000001f)v.active=0;
  }
+ if(patch.kit.enabled)kit_mix(lr,send,delay_send,room_send,n);
  const float echo_feedback=unit(patch.delay_fb),room_decay=.45f+.5f*unit(patch.reverb_time),effect_return=unit(patch.fx_level),echo_target=patch.delay_ms*44.1f;
  unsigned maxgrains=patch.quality?4:2;
  for(unsigned k=0;k<n;k++) {
@@ -668,7 +765,8 @@ void md_midi(unsigned st,unsigned a,unsigned b,int port){
    clock_age=0;if(clock_pulse==0){untilstep=0;tick();}clock_pulse=(clock_pulse+1)%6;}
   return;
  }
- unsigned i=st&15;if(i==15&&(st&240)==0xb0&&a>=16&&a<=19){apply({MD_MACRO,(int)a-16,(int)b*1000/127});return;}if(i>=6)return;Voice &v=voices[i];unsigned type=st&240;
+ unsigned i=st&15;if(i==15&&(st&240)==0xb0&&a>=16&&a<=19){apply({MD_MACRO,(int)a-16,(int)b*1000/127});return;}if(i>=(patch.kit.enabled?4u:6u))return;Voice &v=voices[i];unsigned type=st&240;
+ if(patch.kit.enabled&&i==3){if(type==0x90&&b){kit_fire(kit_note(a),b/127.f);stats.events[3]++;if(record_mode&&record_track==3){unsigned at=record_mode==1?patch.kit.step:((step?step-1:0)/patch.track[3].speed)%patch.kit.length;patch.kit.gates[kit_note(a)]|=1u<<at;if(record_mode==1)patch.kit.step=(at+1)%patch.kit.length;}}else if(type==0xb0&&(a==120||a==123))kit_reset();if(type!=0xb0)return;}
  if(type==0x90&&b){int note=midi_quantize?md_quantize(a,patch.root,patch.scale):bound(a,24,96);capture_note(i,bound(a,24,96),b/127.0f);fire(i,note,b/127.0f);held[i]=a;v.midi_gate=md_has_envelope(v.model)?1:0;}
  else if(type==0x80||(type==0x90&&!b)){capture_off(i,bound(a,24,96));if(held[i]==(int)a){held[i]=-1;if(!sustain[i])v.midi_gate=-1;}}
  else if(type==0xc0){unsigned id=midi_bank[i]*128+a;if(id<MD_TONE_PRESETS)tone_preset(i,id);}
@@ -685,7 +783,7 @@ void md_midi(unsigned st,unsigned a,unsigned b,int port){
  }
 }
 unsigned md_command_space(void){return 64-(qwrite-qread);}
-int md_command(int c,int t,int v) {if(c<0||c>=MD_COMMAND_COUNT)return 0;unsigned w=qwrite;if(w-qread>=64){stats.dropped_commands++;return 0;}queue[w&63]={c,t,v};fence();qwrite=w+1;return 1;}
+int md_command(int c,int t,int v) {if(c<0||c>=MD_COMMAND_COUNT||(c>=99&&c<120))return 0;unsigned w=qwrite;if(w-qread>=64){stats.dropped_commands++;return 0;}queue[w&63]={c,t,v};fence();qwrite=w+1;return 1;}
 void md_render(float *lr,unsigned n) {
  while(n){while(qread!=qwrite){fence();Command e=queue[qread&63];apply(e);fence();qread++;}
   unsigned z=n<Q?n:Q;
@@ -703,9 +801,15 @@ void md_render(float *lr,unsigned n) {
   quantum(lr,z);for(unsigned i=0;i<6;i++)if(seq_gate[i]>0){seq_gate[i]-=z;if(seq_gate[i]<=0)voices[i].midi_gate=-1;}lr+=z*2;n-=z;
  }
 }
+int md_unsaved(){uint32_t h[2];patch_hash(h);return h[0]!=saved_hash[0]||h[1]!=saved_hash[1];}
+void md_mark_saved(){patch_hash(saved_hash);}
+int md_pending_biome(){return pending_biome;}
+int md_active_tracks(){return patch.kit.enabled?4:6;}
+const char *md_kit_name(int n){static const char *s[]={"DUST ROOM","PAPER MACHINES","SOFT STATIC","FOUND OBJECTS","VELOUR TAPE"};return s[bound(n,0,4)];}
+const char *md_pad_name(int n){static const char *s[]={"PILLOW KICK","BRUSH SNARE","DUST HAT","WOOD KNOCK","TINY CLICK","TAPE HISS","CRACKLE","AIR TEXTURE"};return s[bound(n,0,7)];}
 const md_patch *md_state(){return &patch;}const md_stats *md_status(){return &stats;}int md_playing(){return playing;}
 int md_validate(const md_patch *p) {
- if(!p||p->magic!=0x4D445231||p->version!=7||!p->seed||p->tempo<30||p->tempo>220)return 0;
+ if(!p||p->magic!=0x4D445231||p->version!=9||!p->seed||p->tempo<30||p->tempo>220)return 0;
  if(p->biome_id< -1||p->biome_id>=MD_BIOMES||p->edited_mask>127)return 0;
  for(int i=0;i<6;i++)if(p->tone_preset[i]< -1||p->tone_preset[i]>=MD_TONE_PRESETS)return 0;
  for(int j=0;j<4;j++)if(p->macro[j]<0||p->macro[j]>1000)return 0;
@@ -716,13 +820,17 @@ int md_validate(const md_patch *p) {
  if(t.filter<0||t.filter>3)return 0;const int q[]={t.tone,t.harm,t.decay,t.level,t.send,t.shape,t.cutoff,t.resonance,t.breathe};for(int j=0;j<9;j++)if(q[j]<0||q[j]>1000)return 0;if(t.prob<0||t.prob>1000||t.pan<0||t.pan>1000)return 0;}
  for(int i=0;i<6;i++){const md_extension &e=p->ext[i];const int values[]={e.delay_send,e.reverb_send,e.glide,e.marbles,e.tides,e.tides_rate,e.warps};for(int v:values)if(v<0||v>1000)return 0;if(e.bass_mode<0||e.bass_mode>2||e.pattern<0||e.pattern>3||e.edit_step<0||e.edit_step>15)return 0;for(int v:e.notes)if(v< -1||v>24)return 0;}
  if(p->delay_ms<40||p->delay_ms>350||p->delay_fb<0||p->delay_fb>800||p->reverb_time<0||p->reverb_time>850||p->fx_level<0||p->fx_level>1000)return 0;
- if(p->grain_noise<0||p->grain_noise>1000||p->chord_pattern<0||p->chord_pattern>4||p->chord_bars<1||p->chord_bars>8||p->chord_tracks<0||p->chord_tracks>63)return 0;
- for(const md_sequence &q:p->sequence){if(q.enabled>1||q.length<1||q.length>32||q.edit>=q.length||q.generator>3)return 0;
+ if(p->grain_noise<0||p->grain_noise>1000||p->chord_pattern<0||p->chord_pattern>8||p->chord_bars<1||p->chord_bars>16||p->chord_tracks<0||p->chord_tracks>63)return 0;
+ for(const md_sequence &q:p->sequence){if(q.enabled>1||q.length<1||q.length>32||q.edit>=q.length||q.generator>7)return 0;
   for(const md_step &s:q.steps)if((s.note&&(s.note<24||s.note>96))||s.velocity<1||s.velocity>100||s.chance>100||s.gate<1||s.gate>100)return 0;}
+ const md_motion &m=p->motion;if(m.compact>1||m.reserved)return 0;
+ for(int i=0;i<6;i++)if(m.direction[i]>4||m.feel[i]>100||m.shift[i]>31||m.target[i]>6||m.wave[i]>3||m.target2[i]>6||m.wave2[i]>3||m.depth2[i]>1000||m.rate2[i]>1000)return 0;
+ const md_kit &k=p->kit;if(k.enabled>1||k.bank>4||k.pad>7||k.length<1||k.length>32||k.step>=k.length||k.generator>3||k.hiss>100||k.reserved)return 0;
+ for(const md_pad &a:k.pads)if(a.tune< -12||a.tune>12||a.level>1000||a.cutoff>1000||a.send>1000||a.decay>1000)return 0;
  return 1;
 }
-int md_load(const md_patch *p){if(playing||!md_validate(p))return 0;patch=*p;previous=patch;seqrng=patch.seed;clear_audio();for(int j=0;j<4;j++)smooth[j]=unit(patch.macro[j]);for(int i=0;i<6;i++)reset_voice(i);return 1;}
-unsigned md_memory_bytes(){return sizeof element_body+sizeof element_strike+sizeof echo+sizeof room+sizeof room_diffusion+sizeof diffusion_head+sizeof voices_raw+sizeof tape+sizeof grains+sizeof patch+sizeof previous+sizeof stats+sizeof queue+sizeof repeats+512;}
+int md_load(const md_patch *p){if(playing||!md_validate(p))return 0;patch=*p;previous=patch;seqrng=patch.seed;clear_audio();for(int j=0;j<4;j++)smooth[j]=unit(patch.macro[j]);for(int i=0;i<6;i++)reset_voice(i);pending_biome=-1;md_mark_saved();return 1;}
+unsigned md_memory_bytes(){return sizeof element_body+sizeof element_strike+sizeof echo+sizeof room+sizeof room_diffusion+sizeof diffusion_head+sizeof voices_raw+sizeof tape+sizeof grains+sizeof patch+sizeof previous+sizeof kit_voices+sizeof saved_hash+sizeof stats+sizeof queue+sizeof repeats+512;}
 int md_decode(md_patch *out,const void *data,unsigned bytes){
  if(!out||!data)return 0;
  if(bytes==sizeof(md_patch)){md_patch p;memcpy(&p,data,sizeof p);if(!md_validate(&p))return 0;*out=p;return 1;}
@@ -731,6 +839,8 @@ int md_decode(md_patch *out,const void *data,unsigned bytes){
  struct V2Track{int32_t values[17];};
  struct V2Patch{uint32_t magic,version,seed;int32_t macro[4],tempo,locked,freeze,grain_size,grain_pos,feedback,quality;V2Track track[6];int32_t globals[9];};
  md_patch p={};
+ if(bytes==2220){memcpy(&p,data,2220);if(p.version!=8)return 0;motion_defaults(p);if(!md_validate(&p))return 0;*out=p;return 1;}
+ if(bytes==2100){memcpy(&p,data,2100);if(p.version!=7)return 0;kit_defaults(p);if(!md_validate(&p))return 0;*out=p;return 1;}
  if(bytes==1292){memcpy(&p,data,1292);if(p.version!=5&&p.version!=6)return 0;next_defaults(p);if(!md_validate(&p))return 0;*out=p;return 1;}
  if(bytes==652){memcpy(&p,data,652);if(p.version!=4)return 0;extension_defaults(p);if(!md_validate(&p))return 0;*out=p;return 1;}
  if(bytes==620){
@@ -754,6 +864,7 @@ int md_decode(md_patch *out,const void *data,unsigned bytes){
 int md_import(const void *data,unsigned bytes){
  if(playing)return 0;md_patch decoded;return md_decode(&decoded,data,bytes)&&md_load(&decoded);
 }
+int md_import_edit(const void *data,unsigned bytes){uint32_t h[2]={saved_hash[0],saved_hash[1]};int ok=md_import(data,bytes);saved_hash[0]=h[0];saved_hash[1]=h[1];return ok;}
 const char *md_biome_name(int id){return id<0?"USER BIOME":biome_bank[bound(id,0,MD_BIOMES-1)].name;}
 const char *md_biome_family(int id){return id<0?"CUSTOM":biome_families[biome_bank[bound(id,0,MD_BIOMES-1)].family];}
 const char *md_tone_name(int id){return id<0?"BIOME VOICE":tone_bank[bound(id,0,MD_TONE_PRESETS-1)].name;}
@@ -771,7 +882,13 @@ int md_quantize(int note,int root,int scale){
  }return note;
 }
 int md_record_mode(){return record_mode;}int md_record_track(){return record_track;}
-const char *md_chord_name(int p){static const char *names[]={"OFF","I - IV - I - V","I - VI - IV - V","I - VII - IV - I","I - III - VI - IV"};return names[bound(p,0,4)];}
+const char *md_chord_name(int p){static const char *names[]={"OFF","I - IV - I - V","I - VI - IV - V","I - VII - IV - I","I - III - VI - IV","DUSK / 8 CHORDS","LANTERNS / 8 CHORDS","TIDAL / 8 CHORDS","STILL WATER / 8 CHORDS"};return names[bound(p,0,8)];}
+int md_chord_degree(int p,int pos){return journey_degrees[bound(p,0,8)][bound(pos,0,7)];}
+unsigned md_sequence_position(unsigned i,unsigned local){return sequence_position(i>5?5:i,local);}
+const char *md_generator_name(int n){static const char *s[]={"SPARSE","ARP","PULSE","DRIFT","PETALS","TIDELINE","STARS","ANSWERS"};return s[bound(n,0,7)];}
+const char *md_direction_name(int n){static const char *s[]={"FORWARD","REVERSE","PENDULUM","ORBIT","SEEDED"};return s[bound(n,0,4)];}
+const char *md_lfo_target_name(int n){static const char *s[]={"FILTER","COLOUR","PAN","GRAIN SEND","FX SENDS","WARPS","SOFT SWELL"};return s[bound(n,0,6)];}
+const char *md_lfo_wave_name(int n){static const char *s[]={"TRIANGLE","SINE","BLOOM","SIGH"};return s[bound(n,0,3)];}
 const char *md_scale_name(int s){static const char *names[]={"CHROMATIC","MINOR","MAJOR","DORIAN","MINOR PENT","MAJOR PENT","WHOLE TONE","PHRYGIAN"};return names[bound(s,0,7)];}
 const char *md_model_name(int m){static const char *names[]={"PLAITS KICK","PLAITS SNARE","PLAITS HAT","PLAITS FM","PLAITS VA","RINGS MODAL","PLAITS HARMONIC","SINE CHOIR","ROUND BASS","ELEMENTS STRIKE","MELLOW DRIFT","SATIN MORPH","VELVET KEYS","SPECTRAL BLOOM","BREATH TEXTURE"};return names[bound(m,0,MD_MODELS-1)];}
 }

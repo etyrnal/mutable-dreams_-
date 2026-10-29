@@ -1,0 +1,74 @@
+wait 3400
+expect unsaved 0
+spin K1 5
+wait 30
+expect density 600
+expect unsaved 1
+spin PRESET 1
+wait 30
+expect pending_biome 1
+expect biome 0
+shot unsaved-guard.png
+spin K1 -5
+wait 30
+expect density 600
+tap HOME
+wait 30
+expect pending_biome -1
+expect density 600
+spin PRESET 1
+wait 30
+press SEL
+wait 900
+release SEL
+wait 30
+expect biome 0
+tap HOME
+tap HOME
+wait 30
+spin PRESET 1
+wait 30
+tap SEL
+wait 100
+expect biome 1
+expect unsaved 0
+tap GLO
+tap GLO
+tap GLO
+tap GLO
+tap GLO
+tap GLO
+tap GLO
+expect page 23
+spin K1 1
+wait 30
+expect kit_mode 1
+spin SELECT 10
+wait 30
+expect track 3
+tap SEQ
+expect page 26
+spin K4 1
+wait 30
+shot kit-steps.png
+tap EDIT
+expect page 24
+spin K1 -5
+spin K2 -4
+wait 30
+shot kit-pad.png
+press EDIT
+wait 950
+release EDIT
+wait 30
+shot kit-help.png
+tap HOME
+tap SAVE
+wait 100
+expect unsaved 0
+reboot
+wait 3400
+expect kit_mode 1
+expect unsaved 0
+expect invalid 0
+expect queue_drops 0

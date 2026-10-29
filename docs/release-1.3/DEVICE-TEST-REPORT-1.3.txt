@@ -1,0 +1,48 @@
+MUTABLE DREAMS 1.3 — RELEASE QUALIFICATION
+Exact device package: d9400aa360048a8422028f1e005f6a434cd96f9c8db2f0fbef35cda39ebab1d6
+Identity after install: FM-1_710010300
+
+1.2 → 1.3 development installation passed earlier. The exact release build
+was installed from verified Stock V16 on the uniquely named FM-1 endpoint.
+The V16 identity was FM-1_016. Official M-UPGRADE first installed V16 from
+Stock V15 and reported success. Direct loading of the custom package in
+M-UPGRADE failed its file-format check; the exact-device USB updater then
+installed 1.3 and verified its identity. The device was backed up twice
+before the stock roundtrip. Its 22 saved objects were restored byte-for-byte
+using physical SEL; the separate live patch was restored byte-for-byte.
+No other FM-1 or Syntherella MIDI endpoint was opened.
+
+Earlier 1.3 development qualification covered six varied audio cases over
+297.98 seconds, all 30 pages, sequence/chord motion, 12 LFOs and dense
+three-synth plus kit combinations with no added xruns, overloads, invalid
+samples or dropped commands. The exact release build then passed another
+35.1-second audio test while cycling all 30 pages and all
+three button-light modes. Stereo USB input had 0
+capture overflows; measured audio energy was positive. New xruns:
+0; overloads:
+0; nonfinite samples:
+0; dropped commands:
+0. Audio callback peak:
+4444 / 5804 µs.
+
+Host and browser engine tests cover kit samples, presets, patch migration,
+editor transfers, bank validation, storage interruption, and LED preference
+compatibility. The browser editor's button-light control was repaired after
+an end-to-end device check exposed a UI command routing error. Packaged JS
+syntax and routing tests passed. The device firmware was not rebuilt for
+that browser-only correction.
+
+Program image: 514400 / 581564 bytes. Static RAM: 74536 / 98304 bytes.
+DSP pool: 334896 / 344064 bytes (8192 reserved; 976 discretionary).
+These budgets are distinct. The 240 × 240 panel resolution is fixed.
+
+Bounded tests cannot guarantee every arbitrary user patch. Physical TRS
+MIDI, Bluetooth MIDI, user WAV import and custom-firmware use through
+M-UPGRADE are not qualified. The owner confirmed that Off, Dim and Soft are
+visibly distinct and make the button labels easier to see. After a physical
+five-second power cycle, the 1.3 identity and all 22 saved objects were
+rechecked byte-for-byte. The live patch differed in one transient byte
+(offset 36: 1 before reboot, 0 after); saved banks were unchanged. This
+reinforces the separate live JSON export instruction for unsaved edits.
+
+Public 1.0, 1.1 and 1.2 release assets remain unchanged.

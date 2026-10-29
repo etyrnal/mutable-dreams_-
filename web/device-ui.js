@@ -11,7 +11,7 @@ function deviceDraw(m){
  cx.fillStyle='#e9d9c6';cx.font='bold 12px sans-serif';cx.fillText('MUTABLE DREAMS · FM-1',12,22);
  cx.fillStyle='#9db5a8';cx.font='10px sans-serif';cx.fillText('LIVE PARAMETER VIEW',12,37);
  cx.fillStyle='#f7eee4';cx.font='bold 13px sans-serif';cx.fillText(m.help>=0?'HOLD HELP ON THE DEVICE':$('pages')?.querySelector('.active')?.textContent?.trim().slice(0,26)||'LIVE BIOME',12,58);
- for(let i=0;i<6;i++){cx.fillStyle=colors[i];cx.beginPath();cx.arc(24+i*38,86,6+(i===m.track?4:0),0,Math.PI*2);cx.fill();cx.fillStyle=m.muted[i]?'#8d9697':'#ede5db';cx.font='9px sans-serif';cx.fillText(String(i+1),22+i*38,105);}
+ for(let i=0;i<(m.kitMode?4:6);i++){cx.fillStyle=colors[i];cx.beginPath();cx.arc(24+i*38,86,6+(i===m.track?4:0),0,Math.PI*2);cx.fill();cx.fillStyle=m.muted[i]?'#8d9697':'#ede5db';cx.font='9px sans-serif';cx.fillText(String(i+1),22+i*38,105);}
  defs[m.page].forEach(([label],i)=>{const x=12+(i%2)*118,y=132+Math.floor(i/2)*48;cx.fillStyle='#14262b';cx.fillRect(x-3,y-13,110,38);cx.fillStyle=colors[i];cx.font='9px sans-serif';cx.fillText(label.slice(0,18),x,y);cx.fillStyle='#fff3e4';cx.font='bold 14px sans-serif';cx.fillText(String(knobText(m.page,i,m.knobs[i])).slice(0,14),x,y+18);});
  cx.fillStyle='#b8c6bc';cx.font='10px sans-serif';cx.fillText(`${m.playing?'PLAYING':'STOPPED'}  ·  ${m.tempo} BPM  ·  TRACK ${m.track+1}`,12,225);
 }
@@ -28,10 +28,10 @@ function hardwarePost(m){
   if(m.type==='app'&&m.cmd==='command'){
    if(m.c===113||m.c===114){await hardwareBank(m.c===114);return;}
    // Continuous knobs are coalesced. Ordered sequence edits and actions are never coalesced.
-   if([1,2,3,4,5,9,11,14,15,22,23,24,28,29,37,38,39,40,41,42,44,46,47,48,49,50,51,54,55,56,57,58].includes(m.c)){
+   if([1,2,3,4,5,9,11,14,15,22,23,24,28,29,37,38,39,40,41,42,44,46,47,48,49,50,51,54,55,56,57,58,94,122,123].includes(m.c)){
     hardwareParams.set(m.c+':'+m.t,[m.c,m.t,m.v]);if(!hardwareFlush)hardwareFlush=setTimeout(()=>flushHardwareParams().catch(deviceError),45);return;
    }
-   await flushHardwareParams();if(m.c>=100)await d.ui(m.c,m.t,m.v);else await d.command(m.c,m.t,m.v);
+   await flushHardwareParams();if((m.c>=100&&m.c<120)||m.c===124)await d.ui(m.c,m.t,m.v);else await d.command(m.c,m.t,m.v);
   }else{
    await flushHardwareParams();
    if(m.type==='app'&&m.cmd==='page')await d.ui(100,0,m.v);
