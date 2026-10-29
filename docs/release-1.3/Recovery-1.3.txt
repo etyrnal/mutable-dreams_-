@@ -1,0 +1,55 @@
+MUTABLE DREAMS 1.3 — INSTALL, BACKUP AND RECOVERY
+
+1. CONNECT THE RIGHT FM-1
+Disconnect other FM-1 units. Stop playback. Keep USB and power connected.
+Use a current Chrome or Edge browser with Web MIDI SysEx, or the included
+Python installer kit. The installer should identify the intended unit.
+
+2. SAVE BEFORE UPDATING
+On Mutable Dreams 1.1/1.2/1.3, SAVE the Biome, then use the matching browser
+editor to export a full .mddb bank backup and separately export the unsaved
+live patch as JSON. Keep both files off the device. The .mddb contains the
+saved project, preferences and User Banks, not unsaved edits, granular tape
+audio, calibration or MIDI connection state. For 1.0 use its legacy backup
+workflow first. Preserve an older-format backup for a downgrade.
+
+3. INSTALL 1.3
+Open Mutable-Dreams-1.3-Install.html, verify the release hash below,
+disconnect the live editor and choose Install. Keep the cable connected
+until the identity FM-1_710010300 is confirmed. Stock V15 and V16 have both
+been tested as starting points through the same update protocol. The direct
+1.2 → 1.3 route was also tested during development. Do not claim every
+third-party custom firmware path is safe without checking its updater.
+
+M-UPGRADE: The official M-VAVE application successfully installed Stock V16
+from Stock V15. It rejected the custom Mutable Dreams 1.3 file with “File
+format error”. The browser and Python installers are the supported routes
+for this custom firmware; do not advise users to use M-UPGRADE for it.
+
+4. RESTORE IF NEEDED
+After an intermediate Stock firmware, reinstall 1.3 first. Stop playback,
+select internal clock, then restore the .mddb made by a compatible Mutable
+Dreams version. On the device confirm RESTORE FROM USB? with physical SEL.
+Read back the saved banks and import the separate live JSON if desired.
+Do not interrupt a write. If the prompt times out or HOME is pressed, no
+saved objects are overwritten; repeat the transfer.
+
+5. RETURN TO MANUFACTURER STOCK
+The release installer offers return to verified official Stock V15 using
+the original file from M-VAVE. SHA-256 for this specific V15 file:
+db1642b2b6fa5c2cccb11ffd13878068bb28601678d3644049f99dc40e7edb8a
+Returning to stock erases Mutable Dreams User Banks and preferences. To
+update V15 to V16, use official M-UPGRADE with the vendor's V16 .fwsc from
+https://www.m-vave.com/appdownload. The official V16 file used in our test
+had SHA-256 d017fb65e70aca97ee29d944470c3515a74581df5c0576bf70de917c7b2b61d5.
+Manufacturer downloads may change; compare current vendor documentation.
+
+6. AFTER A PROBLEM
+If the browser loses connection, allow the updater to identify the device
+and resume only after confirming the exact intended FM-1 and package. Do
+not use force options with unknown images. Ask for help with the device
+identity, release hash and the point where the installation stopped.
+
+RELEASE FILE: Mutable-Dreams-1.3.0.fwsc, 610136 bytes
+SHA-256: d9400aa360048a8422028f1e005f6a434cd96f9c8db2f0fbef35cda39ebab1d6
+Firmware and recovery notes: https://github.com/kidbee85-beep/mutable-dreams/releases/tag/v1.3
