@@ -34,15 +34,15 @@ static void test_clock_rollover(void){
 }
 int main(void){
  boot();run_ms(100);dream_dismiss_intro();md_patch initial=*md_state(),desired=initial;desired.tempo=92;
- assert(!req(7,0,0)&&response_n==32);assert(!req(9,0,0)&&response_n==208);
- assert(!req(8,0,0));assert(md_stored_size==2100);assert(!memcmp(md_stored_snapshot,&initial,sizeof initial));
+ assert(!req(7,0,0)&&response_n==32);assert(!req(9,0,0)&&response_n==224);
+ assert(!req(8,0,0));assert(md_stored_size==2288);assert(!memcmp(md_stored_snapshot,&initial,sizeof initial));
  dream_cmd(MD_TEMPO,0,110);run_ms(20);assert(!memcmp(md_stored_snapshot,&initial,sizeof initial));
  assert(app_backup_validate(0,&initial,sizeof initial));
  md_patch legacy=initial;legacy.version=4;assert(app_backup_validate(0,&legacy,652));
  legacy.version=5;assert(app_backup_validate(0,&legacy,1292));
  legacy.version=6;assert(app_backup_validate(0,&legacy,1292));
  UserBiome oldbiome={0};oldbiome.magic=0x4d445542;memcpy(oldbiome.name,"LEGACY WORLD",12);oldbiome.patch=legacy;assert(app_backup_validate(OBJ_USER,&oldbiome,1320));
- assert(!plat_store_save(OBJ_USER,&oldbiome,1320));bank_kind=0;bank_slot=0;assert(!bank_action(0));assert(md_state()->version==7&&!md_state()->sequence[0].enabled);
+ assert(!plat_store_save(OBJ_USER,&oldbiome,1320));bank_kind=0;bank_slot=0;md_mark_saved();assert(!bank_action(0));assert(md_state()->version==9&&!md_state()->sequence[0].enabled);
  assert(md_state()->tempo==initial.tempo); /* validation never loads the old project */assert(!app_backup_validate(1,&initial,sizeof initial));assert(!app_backup_validate(0,&initial,20));
  md_patch bad=initial;bad.version=77;assert(!app_backup_validate(0,&bad,sizeof bad));bad=initial;bad.track[2].model=99;assert(!app_backup_validate(0,&bad,sizeof bad));
  for(unsigned obj=0;obj<23;obj++)if(obj!=1)assert(app_backup_validate(obj,0,0));
@@ -58,7 +58,28 @@ int main(void){
  ToneBank tones=tone_bank_io;tones.used=0x10000;assert(!app_backup_validate(22,&tones,sizeof tones));
  tones=tone_bank_io;tones.tone[15].ext.notes[2]=99;assert(!app_backup_validate(22,&tones,sizeof tones));
  assert(!plat_store_save(OBJ_PATCH,&desired,sizeof desired));app_backup_restored();assert(md_state()->tempo==92&&!md_playing()&&!md_clock_source()&&!dream_reloading);
+
+ /* Sound recall is an edit, not a saved whole-Biome baseline. */
+ bank_kind=1;bank_slot=0;dream_ui.track=0;assert(!bank_action(2));
+ dream_cmd(MD_TONE,0,333);run_ms(20);md_mark_saved();assert(!md_unsaved());
+ assert(!bank_action(0));assert(md_unsaved());
+ dream_cmd(MD_SCENE,0,2);run_ms(20);assert(md_pending_biome()==2);
+ md_tap(B_HOME);run_ms(20);assert(md_pending_biome()==-1);
+ bank_kind=0;bank_slot=15;assert(bank_action(0)==8&&bank_pending==15);
+ md_tap(B_HOME);run_ms(20);assert(bank_pending==-1&&md_unsaved());
+ assert(bank_action(0)==8);md_tap(B_SEL);run_ms(20);assert(bank_pending==-1&&!md_unsaved());
+ dream_cmd(MD_KIT_MODE,0,1);run_ms(20);dream_ui.track=3;bank_kind=1;
+ assert(bank_action(2)==6&&bank_action(0)==6);
+ dream_cmd(MD_KIT_MODE,0,0);run_ms(20);bank_kind=0;dream_ui.track=0;
+ puts("PASS tone recall keeps Biome dirty; user Biome replacement guarded; kits use complete Biome banks");
  test_clock_rollover();
  dream_cmd(MD_CLOCK_SOURCE,0,1);run_ms(20);assert(app_backup_playing());assert(!dream_install(&initial,sizeof initial));
- puts("PASS editor capabilities/state, atomic snapshot, bounded upload, CRC/version/range/timeout/busy rejection, all 16/64 slots, overwrite guard, backup save lock, saved-state reload");return 0;
+ /* The new LED preference is persistent and accepts saved 1.2 preferences. */
+ dream_command(124,0,2);assert(dream_prefs.button_glow==2);assert(!req(9,0,0)&&response_n==224);
+ uint32_t glow_state;memcpy(&glow_state,response+220,4);assert(glow_state==2);
+ uint32_t old_pref[3]={0x4d445046,1,0};
+ assert(app_backup_validate(OBJ_PREFS,old_pref,sizeof old_pref));
+ assert(!plat_store_save(OBJ_PREFS,&dream_prefs,sizeof dream_prefs));app_init();assert(dream_prefs.button_glow==2);
+ assert(!plat_store_save(OBJ_PREFS,old_pref,sizeof old_pref));app_init();assert(dream_prefs.button_glow==1&&dream_prefs.boot_sound==0);
+ puts("PASS editor capabilities/state, atomic snapshot, bounded upload, CRC/version/range/timeout/busy rejection, all 16/64 slots, overwrite guard, backup save lock, saved-state reload, LED preference and legacy settings");return 0;
 }

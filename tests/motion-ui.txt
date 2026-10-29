@@ -1,0 +1,530 @@
+wait 3400
+spin PRESET 93
+wait 100
+tap HOME
+tap SEQ
+tap SEQ
+tap SEQ
+tap SEQ
+tap SEQ
+tap SEQ
+tap SEQ
+expect page 27
+shot page-27.png
+press FX
+wait 900
+expect help 0
+expect help_context 0
+release FX
+wait 100
+expect page 27
+expect playing 0
+shot help-27-0.png
+tap HOME
+expect help -1
+press SEL
+wait 900
+expect help 1
+expect help_context 0
+release SEL
+wait 100
+expect page 27
+expect playing 0
+shot help-27-1.png
+tap HOME
+expect help -1
+press ENV
+wait 900
+expect help 2
+expect help_context 0
+release ENV
+wait 100
+expect page 27
+expect playing 0
+shot help-27-2.png
+tap HOME
+expect help -1
+press LFO
+wait 900
+expect help 3
+expect help_context 0
+release LFO
+wait 100
+expect page 27
+expect playing 0
+shot help-27-3.png
+tap HOME
+expect help -1
+press EDIT
+wait 900
+expect help 4
+expect help_context 0
+release EDIT
+wait 100
+expect page 27
+expect playing 0
+shot help-27-4.png
+tap HOME
+expect help -1
+press GLO
+wait 900
+expect help 5
+expect help_context 0
+release GLO
+wait 100
+expect page 27
+expect playing 0
+shot help-27-5.png
+tap HOME
+expect help -1
+press HOME
+wait 900
+expect help 6
+expect help_context 0
+release HOME
+wait 100
+expect page 27
+expect playing 0
+shot help-27-6.png
+tap HOME
+expect help -1
+press SAVE
+wait 900
+expect help 7
+expect help_context 0
+release SAVE
+wait 100
+expect page 27
+expect playing 0
+shot help-27-7.png
+tap HOME
+expect help -1
+press ARP
+wait 900
+expect help 8
+expect help_context 0
+release ARP
+wait 100
+expect page 27
+expect playing 0
+shot help-27-8.png
+tap HOME
+expect help -1
+press SEQ
+wait 900
+expect help 9
+expect help_context 1
+release SEQ
+wait 100
+expect page 27
+expect playing 0
+shot help-27-9.png
+tap HOME
+expect help -1
+press PLAY
+wait 900
+expect help 10
+expect help_context 0
+release PLAY
+wait 100
+expect page 27
+expect playing 0
+shot help-27-10.png
+tap HOME
+expect help -1
+press REC
+wait 900
+expect help 11
+expect help_context 1
+release REC
+wait 100
+expect page 27
+expect playing 0
+shot help-27-11.png
+tap HOME
+expect help -1
+press OCT-
+wait 900
+expect help 12
+expect help_context 0
+release OCT-
+wait 100
+expect page 27
+expect playing 0
+shot help-27-12.png
+tap HOME
+expect help -1
+press OCT+
+wait 900
+expect help 13
+expect help_context 0
+release OCT+
+wait 100
+expect page 27
+expect playing 0
+shot help-27-13.png
+tap HOME
+expect help -1
+spin K1 2
+spin K2 3
+spin K3 5
+spin K4 4
+wait 100
+shot flow-petals.png
+tap HOME
+tap FX
+tap FX
+tap FX
+tap FX
+tap FX
+expect page 28
+shot page-28.png
+press FX
+wait 900
+expect help 0
+expect help_context 1
+release FX
+wait 100
+expect page 28
+expect playing 0
+shot help-28-0.png
+tap HOME
+expect help -1
+press SEL
+wait 900
+expect help 1
+expect help_context 0
+release SEL
+wait 100
+expect page 28
+expect playing 0
+shot help-28-1.png
+tap HOME
+expect help -1
+press ENV
+wait 900
+expect help 2
+expect help_context 0
+release ENV
+wait 100
+expect page 28
+expect playing 0
+shot help-28-2.png
+tap HOME
+expect help -1
+press LFO
+wait 900
+expect help 3
+expect help_context 0
+release LFO
+wait 100
+expect page 28
+expect playing 0
+shot help-28-3.png
+tap HOME
+expect help -1
+press EDIT
+wait 900
+expect help 4
+expect help_context 0
+release EDIT
+wait 100
+expect page 28
+expect playing 0
+shot help-28-4.png
+tap HOME
+expect help -1
+press GLO
+wait 900
+expect help 5
+expect help_context 0
+release GLO
+wait 100
+expect page 28
+expect playing 0
+shot help-28-5.png
+tap HOME
+expect help -1
+press HOME
+wait 900
+expect help 6
+expect help_context 0
+release HOME
+wait 100
+expect page 28
+expect playing 0
+shot help-28-6.png
+tap HOME
+expect help -1
+press SAVE
+wait 900
+expect help 7
+expect help_context 0
+release SAVE
+wait 100
+expect page 28
+expect playing 0
+shot help-28-7.png
+tap HOME
+expect help -1
+press ARP
+wait 900
+expect help 8
+expect help_context 0
+release ARP
+wait 100
+expect page 28
+expect playing 0
+shot help-28-8.png
+tap HOME
+expect help -1
+press SEQ
+wait 900
+expect help 9
+expect help_context 0
+release SEQ
+wait 100
+expect page 28
+expect playing 0
+shot help-28-9.png
+tap HOME
+expect help -1
+press PLAY
+wait 900
+expect help 10
+expect help_context 0
+release PLAY
+wait 100
+expect page 28
+expect playing 0
+shot help-28-10.png
+tap HOME
+expect help -1
+press REC
+wait 900
+expect help 11
+expect help_context 0
+release REC
+wait 100
+expect page 28
+expect playing 0
+shot help-28-11.png
+tap HOME
+expect help -1
+press OCT-
+wait 900
+expect help 12
+expect help_context 0
+release OCT-
+wait 100
+expect page 28
+expect playing 0
+shot help-28-12.png
+tap HOME
+expect help -1
+press OCT+
+wait 900
+expect help 13
+expect help_context 0
+release OCT+
+wait 100
+expect page 28
+expect playing 0
+shot help-28-13.png
+tap HOME
+expect help -1
+spin K1 6
+spin K2 2
+spin K3 25
+spin K4 20
+wait 100
+shot tidal-bloom.png
+tap HOME
+tap FX
+tap FX
+tap FX
+tap FX
+tap FX
+tap FX
+expect page 29
+shot page-29.png
+press FX
+wait 900
+expect help 0
+expect help_context 1
+release FX
+wait 100
+expect page 29
+expect playing 0
+shot help-29-0.png
+tap HOME
+expect help -1
+press SEL
+wait 900
+expect help 1
+expect help_context 0
+release SEL
+wait 100
+expect page 29
+expect playing 0
+shot help-29-1.png
+tap HOME
+expect help -1
+press ENV
+wait 900
+expect help 2
+expect help_context 0
+release ENV
+wait 100
+expect page 29
+expect playing 0
+shot help-29-2.png
+tap HOME
+expect help -1
+press LFO
+wait 900
+expect help 3
+expect help_context 0
+release LFO
+wait 100
+expect page 29
+expect playing 0
+shot help-29-3.png
+tap HOME
+expect help -1
+press EDIT
+wait 900
+expect help 4
+expect help_context 0
+release EDIT
+wait 100
+expect page 29
+expect playing 0
+shot help-29-4.png
+tap HOME
+expect help -1
+press GLO
+wait 900
+expect help 5
+expect help_context 0
+release GLO
+wait 100
+expect page 29
+expect playing 0
+shot help-29-5.png
+tap HOME
+expect help -1
+press HOME
+wait 900
+expect help 6
+expect help_context 0
+release HOME
+wait 100
+expect page 29
+expect playing 0
+shot help-29-6.png
+tap HOME
+expect help -1
+press SAVE
+wait 900
+expect help 7
+expect help_context 0
+release SAVE
+wait 100
+expect page 29
+expect playing 0
+shot help-29-7.png
+tap HOME
+expect help -1
+press ARP
+wait 900
+expect help 8
+expect help_context 0
+release ARP
+wait 100
+expect page 29
+expect playing 0
+shot help-29-8.png
+tap HOME
+expect help -1
+press SEQ
+wait 900
+expect help 9
+expect help_context 0
+release SEQ
+wait 100
+expect page 29
+expect playing 0
+shot help-29-9.png
+tap HOME
+expect help -1
+press PLAY
+wait 900
+expect help 10
+expect help_context 0
+release PLAY
+wait 100
+expect page 29
+expect playing 0
+shot help-29-10.png
+tap HOME
+expect help -1
+press REC
+wait 900
+expect help 11
+expect help_context 0
+release REC
+wait 100
+expect page 29
+expect playing 0
+shot help-29-11.png
+tap HOME
+expect help -1
+press OCT-
+wait 900
+expect help 12
+expect help_context 0
+release OCT-
+wait 100
+expect page 29
+expect playing 0
+shot help-29-12.png
+tap HOME
+expect help -1
+press OCT+
+wait 900
+expect help 13
+expect help_context 0
+release OCT+
+wait 100
+expect page 29
+expect playing 0
+shot help-29-13.png
+tap HOME
+expect help -1
+spin K1 6
+spin K2 2
+spin K3 25
+spin K4 20
+wait 100
+shot tidal-bloom.png
+tap HOME
+tap EDIT
+tap EDIT
+tap EDIT
+wait 100
+shot organic-ad.png
+spin K1 20
+spin K2 10
+wait 200
+shot organic-ad-long.png
+tap HOME
+tap GLO
+tap GLO
+spin K1 5
+spin K2 8
+spin K4 1
+wait 100
+shot dusk-journey.png
+expect invalid 0
+expect queue_drops 0
